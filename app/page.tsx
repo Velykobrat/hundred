@@ -1,23 +1,10 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 
-type Node = {
-  id: string;
-  name: string;
-  value: number;
-  unit: string;
-  children: Node[];
-};
-
-type LayoutItem = {
-  node: Node;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  isRemaining?: boolean;
-};
+import type { LayoutItem, Node } from "../src/types/node";
+import { findNodeById, updateNodeById } from "../src/lib/tree";
+import { createTreemap } from "../src/lib/treemap";
 
 const COLORS = [
   "#6366f1",
@@ -54,132 +41,6 @@ function formatPercent(value: number) {
   return `${new Intl.NumberFormat("uk-UA", {
     maximumFractionDigits: 1,
   }).format(value)}%`;
-}
-
-function findNodeById(node: Node, id: string): Node | null {
-  if (node.id === id) {
-    return node;
-  }
-
-  for (const child of node.children) {
-    const found = findNodeById(child, id);
-
-    if (found) {
-      return found;
-    }
-  }
-
-  return null;
-}
-
-function updateNodeById(
-  node: Node,
-  id: string,
-  updater: (node: Node) => Node
-): Node {
-  if (node.id === id) {
-    return updater(node);
-  }
-
-  return {
-    ...node,
-    children: node.children.map((child) =>
-      updateNodeById(child, id, updater)
-    ),
-  };
-}
-
-function splitNearHalf(items: LayoutItem[]) {
-  const total = items.reduce((sum, item) => sum + item.node.value, 0);
-
-  let running = 0;
-  let bestIndex = 1;
-  let bestDifference = Infinity;
-
-  for (let i = 1; i < items.length; i++) {
-    running += items[i - 1].node.value;
-
-    const difference = Math.abs(total / 2 - running);
-
-    if (difference < bestDifference) {
-      bestDifference = difference;
-      bestIndex = i;
-    }
-  }
-
-  return [items.slice(0, bestIndex), items.slice(bestIndex)];
-}
-
-function createTreemap(
-  items: LayoutItem[],
-  x = 0,
-  y = 0,
-  width = 100,
-  height = 100
-): LayoutItem[] {
-  if (items.length === 0) {
-    return [];
-  }
-
-  if (items.length === 1) {
-    return [
-      {
-        ...items[0],
-        x,
-        y,
-        width,
-        height,
-      },
-    ];
-  }
-
-  const [groupA, groupB] = splitNearHalf(items);
-
-  const totalA = groupA.reduce(
-    (sum, item) => sum + item.node.value,
-    0
-  );
-
-  const totalB = groupB.reduce(
-    (sum, item) => sum + item.node.value,
-    0
-  );
-
-  const total = totalA + totalB;
-
-  if (total <= 0) {
-    return [];
-  }
-
-  const ratioA = totalA / total;
-
-  if (width >= height) {
-    const widthA = width * ratioA;
-
-    return [
-      ...createTreemap(groupA, x, y, widthA, height),
-      ...createTreemap(
-        groupB,
-        x + widthA,
-        y,
-        width - widthA,
-        height
-      ),
-    ];
-  }
-
-  const heightA = height * ratioA;
-
-  return [
-    ...createTreemap(groupA, x, y, width, heightA),
-    ...createTreemap(
-      groupB,
-      x,
-      y + heightA,
-      width,
-      height - heightA
-    ),
-  ];
 }
 
 export default function Home() {
@@ -259,7 +120,7 @@ export default function Home() {
       <main className="min-h-screen bg-neutral-950 px-5 py-10 text-white">
         <div className="mx-auto max-w-xl">
           <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">
-            Whole / Part
+            Hundred
           </p>
 
           <h1 className="mt-4 text-4xl font-semibold tracking-tight">
@@ -390,6 +251,10 @@ export default function Home() {
   function addChild(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!current) {
+      return;
+    }
+
     const value = Number(childValue);
 
     if (
@@ -447,6 +312,7 @@ export default function Home() {
               className="flex items-center gap-2"
             >
               <button
+                type="button"
                 onClick={() => goToLevel(index)}
                 className="transition hover:text-white"
               >
@@ -475,9 +341,11 @@ export default function Home() {
             <p className="mt-3 text-neutral-400">
               {formatNumber(current.value)}{" "}
               {current.unit}
+
               <span className="mx-2 text-neutral-700">
                 ·
               </span>
+
               100%
             </p>
           </div>
@@ -509,10 +377,6 @@ export default function Home() {
 
                 const area = width * height;
 
-                /*
-                  Уся площина = 10 000 умовних одиниць.
-                  10% = приблизно 1000.
-                */
                 const showFullInfo =
                   !isRemaining && area >= 650;
 
@@ -535,15 +399,6 @@ export default function Home() {
                         openNode(node);
                       }
                     }}
-                    aria-label={
-                      isRemaining
-                        ? `Вільно ${formatPercent(
-                            percent
-                          )}`
-                        : `${node.name}: ${formatPercent(
-                            percent
-                          )}`
-                    }
                     className={`group absolute overflow-hidden border border-neutral-950/80 text-left transition-all duration-300 ${
                       isRemaining
                         ? "cursor-default"
@@ -727,21 +582,17 @@ export default function Home() {
 
               {children.length === 0 ? (
                 <p className="mt-6 text-sm leading-relaxed text-neutral-600">
-                  Додай першу частину. Її площа
-                  автоматично відповідатиме частці від
-                  поточних 100%.
+                  Додай першу частину. Її площа автоматично
+                  відповідатиме частці від поточних 100%.
                 </p>
               ) : (
                 <div className="mt-6 space-y-2">
                   {children.map((child) => {
                     const percent =
-                      (child.value /
-                        current.value) *
-                      100;
+                      (child.value / current.value) * 100;
 
-                    const color = getNodeColor(
-                      child.id
-                    );
+                    const color =
+                      getNodeColor(child.id);
 
                     return (
                       <button
