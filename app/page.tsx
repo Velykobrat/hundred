@@ -1,665 +1,187 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
-
-import type { LayoutItem, Node } from "../src/types/node";
+import { useMemo, useState } from "react";
+import type { Node } from "../src/types/node";
 import { findNodeById, updateNodeById } from "../src/lib/tree";
-import { createTreemap } from "../src/lib/treemap";
+import { deletePart, editPart, encodeDocument, remaining, sumValues, units } from "../src/lib/document";
+import { useDocument } from "../src/lib/use-document";
+import { formatNumber, formatPercent, getNodeColor } from "../src/lib/format";
+import NodeForm from "../src/components/NodeForm";
+import Modal from "../src/components/Modal";
+import Treemap from "../src/components/Treemap";
 
-const COLORS = [
-  "#6366f1",
-  "#ec4899",
-  "#14b8a6",
-  "#f59e0b",
-  "#8b5cf6",
-  "#06b6d4",
-  "#84cc16",
-  "#f97316",
-  "#ef4444",
-  "#3b82f6",
-  "#a855f7",
-  "#10b981",
-];
-
-function getNodeColor(id: string) {
-  let hash = 0;
-
-  for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+function countParts(node: Node): number {
+  return node.children.reduce((count, child) => count + 1 + countParts(child), 0);
+}
+function findParent(root: Node, id: string): Node | null {
+  if (root.children.some((child) => child.id === id)) return root;
+  for (const child of root.children) {
+    const result = findParent(child, id);
+    if (result) return result;
   }
-
-  return COLORS[Math.abs(hash) % COLORS.length];
-}
-
-function formatNumber(value: number) {
-  return new Intl.NumberFormat("uk-UA", {
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function formatPercent(value: number) {
-  return `${new Intl.NumberFormat("uk-UA", {
-    maximumFractionDigits: 1,
-  }).format(value)}%`;
+  return null;
 }
 
 export default function Home() {
-  const [root, setRoot] = useState<Node | null>(null);
-  const [pathIds, setPathIds] = useState<string[]>([]);
-
-  const [rootName, setRootName] = useState("");
-  const [rootValue, setRootValue] = useState("");
-  const [rootUnit, setRootUnit] = useState("");
-
-  const [childName, setChildName] = useState("");
-  const [childValue, setChildValue] = useState("");
-
-  const current = useMemo(() => {
-    if (!root) {
-      return null;
-    }
-
-    const currentId =
-      pathIds[pathIds.length - 1] ?? root.id;
-
-    return findNodeById(root, currentId);
-  }, [root, pathIds]);
-
-  const path = useMemo(() => {
-    if (!root) {
-      return [];
-    }
-
-    return pathIds
-      .map((id) => findNodeById(root, id))
-      .filter((node): node is Node => node !== null);
-  }, [root, pathIds]);
-
-  function createRoot(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const value = Number(rootValue);
-
-    if (
-      !rootName.trim() ||
-      !rootUnit.trim() ||
-      !Number.isFinite(value) ||
-      value <= 0
-    ) {
-      return;
-    }
-
-    const newRoot: Node = {
-      id: crypto.randomUUID(),
-      name: rootName.trim(),
-      value,
-      unit: rootUnit.trim(),
-      children: [],
-    };
-
-    setRoot(newRoot);
-    setPathIds([newRoot.id]);
-
-    setRootName("");
-    setRootValue("");
-    setRootUnit("");
-  }
+  const workspace = useDocument();
+  const { root, pathIds } = workspace.document;
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const current = useMemo(() => root ? findNodeById(root, pathIds.at(-1) ?? root.id) : null, [root, pathIds]);
+  const path = useMemo(() => root ? pathIds.map((id) => findNodeById(root, id)).filter((node): node is Node => node !== null) : [], [root, pathIds]);
+  const editing = root && editingId ? findNodeById(root, editingId) : null;
+  const deleting = root && deletingId ? findNodeById(root, deletingId) : null;
+  const parent = root && editing ? findParent(root, editing.id) : null;
+  const availableForEdit = editing ? parent ? (units(parent.value) - units(sumValues(parent.children.filter((child) => child.id !== editing.id)))) / 1_000_000 : undefined : undefined;
+  const free = current ? remaining(current) : 0;
+  const used = current ? sumValues(current.children) : 0;
 
   function openNode(node: Node) {
-    setPathIds((previous) => [...previous, node.id]);
+    workspace.navigate([...pathIds, node.id]);
+    setEditingId(null);
+    setDeletingId(null);
   }
-
-  function goToLevel(index: number) {
-    setPathIds((previous) =>
-      previous.slice(0, index + 1)
-    );
-  }
-
-  if (!root) {
-    return (
-      <main className="min-h-screen bg-neutral-950 px-5 py-10 text-white">
-        <div className="mx-auto max-w-xl">
-          <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">
-            Hundred
-          </p>
-
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight">
-            Створи свої 100%
-          </h1>
-
-          <p className="mt-3 leading-relaxed text-neutral-400">
-            Вкажи ціле. Це може бути бюджет, час, площа,
-            люди, пам&apos;ять або будь-яка інша величина.
-          </p>
-
-          <form
-            onSubmit={createRoot}
-            className="mt-10 space-y-5 rounded-[28px] border border-white/10 bg-neutral-900 p-6"
-          >
-            <div>
-              <label className="mb-2 block text-sm text-neutral-400">
-                Назва
-              </label>
-
-              <input
-                value={rootName}
-                onChange={(event) =>
-                  setRootName(event.target.value)
-                }
-                placeholder="Наприклад: Місячний бюджет"
-                className="w-full rounded-2xl border border-white/10 bg-neutral-950 px-4 py-3 outline-none transition focus:border-white/30"
-              />
-            </div>
-
-            <div className="grid grid-cols-[1fr_120px] gap-4">
-              <div>
-                <label className="mb-2 block text-sm text-neutral-400">
-                  Значення
-                </label>
-
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={rootValue}
-                  onChange={(event) =>
-                    setRootValue(event.target.value)
-                  }
-                  placeholder="1000"
-                  className="w-full rounded-2xl border border-white/10 bg-neutral-950 px-4 py-3 outline-none transition focus:border-white/30"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm text-neutral-400">
-                  Одиниця
-                </label>
-
-                <input
-                  value={rootUnit}
-                  onChange={(event) =>
-                    setRootUnit(event.target.value)
-                  }
-                  placeholder="грн"
-                  className="w-full rounded-2xl border border-white/10 bg-neutral-950 px-4 py-3 outline-none transition focus:border-white/30"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full rounded-2xl bg-white px-5 py-3 font-medium text-black transition hover:bg-neutral-200"
-            >
-              Створити 100%
-            </button>
-          </form>
-        </div>
-      </main>
-    );
-  }
-
-  if (!current) {
-    return null;
-  }
-
-  const children = current.children;
-
-  const usedValue = children.reduce(
-    (sum, child) => sum + child.value,
-    0
-  );
-
-  const remainingValue = Math.max(
-    current.value - usedValue,
-    0
-  );
-
-  const usedPercent =
-    current.value > 0
-      ? (usedValue / current.value) * 100
-      : 0;
-
-  const rawLayoutItems: LayoutItem[] = children.map(
-    (node) => ({
-      node,
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-    })
-  );
-
-  if (remainingValue > 0) {
-    rawLayoutItems.push({
-      node: {
-        id: "__remaining__",
-        name: "Вільно",
-        value: remainingValue,
-        unit: current.unit,
-        children: [],
-      },
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-      isRemaining: true,
-    });
-  }
-
-  const layout = createTreemap(rawLayoutItems);
-
-  function addChild(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!current) {
-      return;
+  function downloadBackup() {
+    let data = encodeDocument(workspace.document);
+    if (!root && workspace.storageError) {
+      try { data = localStorage.getItem("hundred.document.v1") ?? data; } catch { /* Export the current empty document if storage is inaccessible. */ }
     }
-
-    const value = Number(childValue);
-
-    if (
-      !childName.trim() ||
-      !Number.isFinite(value) ||
-      value <= 0
-    ) {
-      return;
-    }
-
-    if (value > remainingValue) {
-      alert(
-        `Доступно лише ${formatNumber(
-          remainingValue
-        )} ${current.unit}`
-      );
-
-      return;
-    }
-
-    const newChild: Node = {
-      id: crypto.randomUUID(),
-      name: childName.trim(),
-      value,
-      unit: current.unit,
-      children: [],
-    };
-
-    setRoot((previousRoot) => {
-      if (!previousRoot) {
-        return previousRoot;
-      }
-
-      return updateNodeById(
-        previousRoot,
-        current.id,
-        (node) => ({
-          ...node,
-          children: [...node.children, newChild],
-        })
-      );
-    });
-
-    setChildName("");
-    setChildValue("");
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "hundred-backup.json";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+
+  if (!workspace.ready) return <main className="flex min-h-screen items-center justify-center bg-neutral-950 p-6 text-neutral-300" role="status">Відновлюю твій розподіл…</main>;
 
   return (
     <main className="min-h-screen bg-neutral-950 px-5 py-6 text-white md:px-10 md:py-10">
-      <div className="mx-auto max-w-7xl">
-        <nav className="mb-8 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
-          {path.map((node, index) => (
-            <div
-              key={node.id}
-              className="flex items-center gap-2"
-            >
-              <button
-                type="button"
-                onClick={() => goToLevel(index)}
-                className="transition hover:text-white"
-              >
-                {node.name}
-              </button>
-
-              {index < path.length - 1 && (
-                <span className="text-neutral-700">
-                  /
-                </span>
-              )}
-            </div>
-          ))}
-        </nav>
-
-        <header className="mb-8 flex flex-wrap items-end justify-between gap-5">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">
-              Whole
-            </p>
-
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-6xl">
-              {current.name}
-            </h1>
-
-            <p className="mt-3 text-neutral-400">
-              {formatNumber(current.value)}{" "}
-              {current.unit}
-
-              <span className="mx-2 text-neutral-700">
-                ·
-              </span>
-
-              100%
-            </p>
+      <div className={root ? "mx-auto max-w-7xl" : "mx-auto max-w-xl"}>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-5">
+          <button type="button" onClick={() => root && workspace.navigate([root.id])} className="rounded-lg text-xs uppercase tracking-[0.3em] text-neutral-300" aria-label="Hundred — повернутися до цілого">Hundred</button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={() => { workspace.undo(); setEditingId(null); setDeletingId(null); }} disabled={!workspace.past.length} className="rounded-xl border border-white/15 px-3 py-2 text-sm hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" title="Скасувати останню зміну">↶ Скасувати</button>
+            <button type="button" onClick={() => { workspace.redo(); setEditingId(null); setDeletingId(null); }} disabled={!workspace.future.length} className="rounded-xl border border-white/15 px-3 py-2 text-sm hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" title="Повторити скасовану зміну">↷ Повторити</button>
+            {(root || workspace.storageError) && <button type="button" onClick={downloadBackup} className="rounded-xl border border-white/15 px-3 py-2 text-sm hover:bg-white/5">Резервна копія</button>}
           </div>
-
-          <div className="text-right">
-            <p className="text-sm text-neutral-500">
-              Розподілено
-            </p>
-
-            <p className="mt-1 text-2xl font-medium">
-              {formatPercent(usedPercent)}
-            </p>
-          </div>
-        </header>
-
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-          <section className="relative aspect-square w-full overflow-hidden rounded-[32px] border border-white/10 bg-neutral-900 xl:aspect-auto xl:min-h-[700px]">
-            {layout.map(
-              ({
-                node,
-                x,
-                y,
-                width,
-                height,
-                isRemaining,
-              }) => {
-                const percent =
-                  (node.value / current.value) * 100;
-
-                const area = width * height;
-
-                const showFullInfo =
-                  !isRemaining && area >= 650;
-
-                const showCompactInfo =
-                  !isRemaining &&
-                  area >= 250 &&
-                  area < 650;
-
-                const color = isRemaining
-                  ? "#171717"
-                  : getNodeColor(node.id);
-
-                return (
-                  <button
-                    key={node.id}
-                    type="button"
-                    disabled={isRemaining}
-                    onClick={() => {
-                      if (!isRemaining) {
-                        openNode(node);
-                      }
-                    }}
-                    className={`group absolute overflow-hidden border border-neutral-950/80 text-left transition-all duration-300 ${
-                      isRemaining
-                        ? "cursor-default"
-                        : "cursor-pointer hover:z-20 hover:brightness-110"
-                    }`}
-                    style={{
-                      left: `${x}%`,
-                      top: `${y}%`,
-                      width: `${width}%`,
-                      height: `${height}%`,
-                      backgroundColor: color,
-                    }}
-                  >
-                    {isRemaining && area >= 500 && (
-                      <div className="flex h-full flex-col justify-between p-4 text-neutral-600 md:p-6">
-                        <span className="text-sm">
-                          {formatPercent(percent)}
-                        </span>
-
-                        <div>
-                          <p className="font-medium">
-                            Вільно
-                          </p>
-
-                          <p className="mt-1 text-xs">
-                            {formatNumber(node.value)}{" "}
-                            {node.unit}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {showFullInfo && (
-                      <div className="flex h-full flex-col justify-between p-4 md:p-6">
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="text-sm text-white/75">
-                            {formatPercent(percent)}
-                          </span>
-
-                          <span className="text-white/50 transition group-hover:translate-x-1 group-hover:-translate-y-1 group-hover:text-white">
-                            ↗
-                          </span>
-                        </div>
-
-                        <div>
-                          <h2 className="text-lg font-semibold tracking-tight md:text-2xl">
-                            {node.name}
-                          </h2>
-
-                          <p className="mt-1 text-sm text-white/70">
-                            {formatNumber(node.value)}{" "}
-                            {node.unit}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {showCompactInfo && (
-                      <div className="flex h-full flex-col justify-between p-3">
-                        <span className="text-xs text-white/75">
-                          {formatPercent(percent)}
-                        </span>
-
-                        <p className="truncate text-sm font-medium">
-                          {node.name}
-                        </p>
-                      </div>
-                    )}
-                  </button>
-                );
-              }
-            )}
-          </section>
-
-          <aside className="space-y-6">
-            <section className="rounded-[28px] border border-white/10 bg-neutral-900 p-5">
-              <p className="text-xs uppercase tracking-[0.25em] text-neutral-500">
-                Add part
-              </p>
-
-              <h2 className="mt-3 text-xl font-medium">
-                Додати частину
-              </h2>
-
-              <form
-                onSubmit={addChild}
-                className="mt-6 space-y-4"
-              >
-                <div>
-                  <label className="mb-2 block text-sm text-neutral-500">
-                    Назва
-                  </label>
-
-                  <input
-                    value={childName}
-                    onChange={(event) =>
-                      setChildName(event.target.value)
-                    }
-                    placeholder="Наприклад: Оренда"
-                    className="w-full rounded-2xl border border-white/10 bg-neutral-950 px-4 py-3 outline-none transition focus:border-white/30"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm text-neutral-500">
-                    Значення
-                  </label>
-
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      max={remainingValue}
-                      step="any"
-                      value={childValue}
-                      onChange={(event) =>
-                        setChildValue(event.target.value)
-                      }
-                      placeholder={`До ${formatNumber(
-                        remainingValue
-                      )}`}
-                      className="w-full rounded-2xl border border-white/10 bg-neutral-950 px-4 py-3 pr-16 outline-none transition focus:border-white/30"
-                    />
-
-                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-neutral-600">
-                      {current.unit}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={remainingValue <= 0}
-                  className="w-full rounded-2xl bg-white px-5 py-3 font-medium text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-500"
-                >
-                  Додати
-                </button>
-              </form>
-
-              <div className="mt-6 border-t border-white/10 pt-5">
-                <div className="flex justify-between gap-4 text-sm">
-                  <span className="text-neutral-500">
-                    Розподілено
-                  </span>
-
-                  <span>
-                    {formatNumber(usedValue)}{" "}
-                    {current.unit}
-                  </span>
-                </div>
-
-                <div className="mt-3 flex justify-between gap-4 text-sm">
-                  <span className="text-neutral-500">
-                    Залишилось
-                  </span>
-
-                  <span>
-                    {formatNumber(remainingValue)}{" "}
-                    {current.unit}
-                  </span>
-                </div>
-              </div>
-            </section>
-
-            <section className="rounded-[28px] border border-white/10 bg-neutral-900 p-5">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.25em] text-neutral-500">
-                    Structure
-                  </p>
-
-                  <h2 className="mt-2 text-xl font-medium">
-                    Структура
-                  </h2>
-                </div>
-
-                <span className="text-sm text-neutral-500">
-                  {children.length}
-                </span>
-              </div>
-
-              {children.length === 0 ? (
-                <p className="mt-6 text-sm leading-relaxed text-neutral-600">
-                  Додай першу частину. Її площа автоматично
-                  відповідатиме частці від поточних 100%.
-                </p>
-              ) : (
-                <div className="mt-6 space-y-2">
-                  {children.map((child) => {
-                    const percent =
-                      (child.value / current.value) * 100;
-
-                    const color =
-                      getNodeColor(child.id);
-
-                    return (
-                      <button
-                        key={child.id}
-                        type="button"
-                        onClick={() =>
-                          openNode(child)
-                        }
-                        className="group flex w-full items-center gap-3 rounded-2xl px-2 py-2 text-left transition hover:bg-white/5"
-                      >
-                        <span
-                          className="h-4 w-4 shrink-0 rounded-[5px]"
-                          style={{
-                            backgroundColor: color,
-                          }}
-                        />
-
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm text-neutral-200">
-                            {child.name}
-                          </p>
-
-                          <p className="mt-0.5 text-xs text-neutral-600">
-                            {formatNumber(
-                              child.value
-                            )}{" "}
-                            {child.unit}
-                          </p>
-                        </div>
-
-                        <div className="shrink-0 text-right">
-                          <p className="text-sm">
-                            {formatPercent(percent)}
-                          </p>
-
-                          <p className="text-xs text-neutral-700 transition group-hover:text-neutral-400">
-                            ↗
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {remainingValue > 0 && (
-                <div className="mt-5 border-t border-white/10 pt-4">
-                  <div className="flex items-center gap-3 px-2">
-                    <span className="h-4 w-4 shrink-0 rounded-[5px] border border-white/10 bg-neutral-950" />
-
-                    <div className="flex-1 text-sm text-neutral-600">
-                      Вільно
-                    </div>
-
-                    <span className="text-sm text-neutral-600">
-                      {formatPercent(
-                        (remainingValue /
-                          current.value) *
-                          100
-                      )}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </section>
-          </aside>
         </div>
+
+        <div className="mb-6 space-y-2">
+          <p role="status" className={workspace.storageError ? "text-sm text-amber-300" : "text-xs text-neutral-400"}>
+            {workspace.storageError ?? (root ? "✓ Збережено в цьому браузері на цьому пристрої" : "Розподіл зберігатиметься в цьому браузері на цьому пристрої")}
+          </p>
+          {workspace.storageError && <p className="text-xs leading-relaxed text-neutral-400">Для збереження браузеру потрібен доступ до локального сховища. Резервна копія дозволяє завантажити дані файлом.</p>}
+          <p aria-live="polite" aria-atomic="true" className="min-h-5 text-sm text-indigo-300">{workspace.notice}</p>
+        </div>
+
+        {!root ? (
+          <>
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight">Створи свої 100%</h1>
+            <p className="mt-3 leading-relaxed text-neutral-400">Вкажи ціле. Це може бути бюджет, час, площа, люди, пам&apos;ять або будь-яка інша величина.</p>
+            <section className="mt-8 rounded-[28px] border border-white/10 bg-neutral-900 p-6">
+              <NodeForm createWhole submitLabel="Створити 100%" onSubmit={(name, value, unit) => {
+                const newRoot: Node = { id: crypto.randomUUID(), name, value, unit, children: [] };
+                workspace.change({ root: newRoot, pathIds: [newRoot.id] }, "Ціле створено. Додай першу частину.");
+              }} />
+            </section>
+          </>
+        ) : current ? (
+          <>
+            <nav aria-label="Шлях у розподілі" className="mb-8 flex flex-wrap items-center gap-2 text-sm text-neutral-400">
+              {path.length > 1 && <button type="button" onClick={() => workspace.navigate(pathIds.slice(0, -1))} className="mr-2 rounded-xl border border-white/15 px-3 py-2 hover:text-white">← Назад</button>}
+              {path.map((node, index) => <div key={node.id} className="flex items-center gap-2">
+                <button type="button" aria-current={index === path.length - 1 ? "page" : undefined} onClick={() => workspace.navigate(pathIds.slice(0, index + 1))} className="rounded-md py-1 hover:text-white">{node.name}</button>
+                {index < path.length - 1 && <span aria-hidden="true" className="text-neutral-600">/</span>}
+              </div>)}
+            </nav>
+
+            <header className="mb-8 flex flex-wrap items-end justify-between gap-5">
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">{path.length === 1 ? "Ціле" : "Частина"}</p>
+                <h1 className="mt-3 break-words text-4xl font-semibold tracking-tight md:text-6xl">{current.name}</h1>
+                <p className="mt-3 text-neutral-300">{formatNumber(current.value)} {current.unit} <span className="mx-2 text-neutral-600">·</span> 100% цього рівня</p>
+                {current.id !== root.id && <p className="mt-2 text-sm text-neutral-400">{formatPercent(current.value / root.value * 100)} від усього «{root.name}»</p>}
+                <button type="button" onClick={() => setEditingId(current.id)} className="mt-4 rounded-xl border border-white/15 px-3 py-2 text-sm text-neutral-200 hover:bg-white/5">Редагувати {current.id === root.id ? "ціле" : "частину"}</button>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-neutral-400">Розподілено</p>
+                <p className="mt-1 text-2xl font-medium">{formatPercent(used / current.value * 100)}</p>
+                <p className="mt-1 text-sm text-neutral-400">Вільно: {formatNumber(free)} {current.unit}</p>
+              </div>
+            </header>
+
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+              <Treemap node={current} onOpen={openNode} />
+              <aside className="space-y-6">
+                <section className="rounded-[28px] border border-white/10 bg-neutral-900 p-5">
+                  <h2 className="text-xl font-medium">Додати частину</h2>
+                  <p className="mb-5 mt-2 text-sm text-neutral-400">Доступно {formatNumber(free)} {current.unit}</p>
+                  {path.length >= 41 || countParts(root) >= 4999 ? <p className="text-sm text-amber-300">Досягнуто межі розміру розподілу. Відредагуй наявні частини.</p> :
+                    <NodeForm key={current.id} unit={current.unit} available={free} submitLabel="Додати" onSubmit={(name, value) => {
+                      if (units(value) > units(remaining(current))) return "Обсяг змінився. Перевір доступний залишок.";
+                      const child: Node = { id: crypto.randomUUID(), name, value, unit: current.unit, children: [] };
+                      const nextRoot = updateNodeById(root, current.id, (node) => ({ ...node, children: [...node.children, child] }));
+                      workspace.change({ root: nextRoot, pathIds }, `Додано «${name}».`);
+                    }} />}
+                  <div className="mt-6 flex justify-between gap-4 border-t border-white/10 pt-5 text-sm">
+                    <span className="text-neutral-400">Розподілено</span><span>{formatNumber(used)} {current.unit}</span>
+                  </div>
+                </section>
+
+                <section className="rounded-[28px] border border-white/10 bg-neutral-900 p-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <h2 className="text-xl font-medium">Структура</h2><span className="text-sm text-neutral-400">{current.children.length}</span>
+                  </div>
+                  {!current.children.length ? <p className="mt-6 text-sm leading-relaxed text-neutral-400">Додай першу частину. Її площа відповідатиме частці від поточних 100%.</p> :
+                    <ul className="mt-5 space-y-3">
+                      {current.children.map((child) => <li key={child.id} className="rounded-2xl border border-white/10 p-3">
+                        <button type="button" onClick={() => openNode(child)} className="flex w-full items-center gap-3 rounded-lg text-left hover:brightness-125">
+                          <span className="h-4 w-4 shrink-0 rounded-[5px]" style={{ backgroundColor: getNodeColor(child.id) }} aria-hidden="true" />
+                          <span className="min-w-0 flex-1">
+                            <span className="block break-words text-sm text-neutral-100">{child.name}</span>
+                            <span className="mt-1 block text-xs text-neutral-400">{formatNumber(child.value)} {child.unit}{child.children.length ? ` · вкладених: ${child.children.length}` : ""}</span>
+                          </span>
+                          <span className="shrink-0 text-sm">{formatPercent(child.value / current.value * 100)} <span aria-hidden="true">↗</span></span>
+                        </button>
+                        <div className="mt-3 flex gap-2 border-t border-white/10 pt-2">
+                          <button type="button" onClick={() => setEditingId(child.id)} aria-label={`Редагувати «${child.name}»`} className="rounded-lg px-2 py-2 text-xs text-neutral-300 hover:bg-white/5">Редагувати</button>
+                          <button type="button" onClick={() => setDeletingId(child.id)} aria-label={`Видалити «${child.name}»`} className="rounded-lg px-2 py-2 text-xs text-rose-300 hover:bg-rose-400/10">Видалити</button>
+                        </div>
+                      </li>)}
+                    </ul>}
+                  {free > 0 && <div className="mt-5 flex justify-between gap-3 border-t border-white/10 pt-4 text-sm text-neutral-400"><span>Вільно</span><span>{formatPercent(free / current.value * 100)}</span></div>}
+                </section>
+              </aside>
+            </div>
+          </>
+        ) : <p role="alert">Не вдалося відкрити частину. <button type="button" onClick={() => workspace.navigate([root.id])} className="underline">Повернутися до цілого</button></p>}
+
+        {editing && root && <Modal key={editing.id} title={editing.id === root.id ? "Редагувати ціле" : "Редагувати частину"} onClose={() => setEditingId(null)}>
+          <p className="mb-5 text-sm leading-relaxed text-neutral-400">Зміни назву або значення. Вкладені частини залишаться.{availableForEdit !== undefined ? ` Доступно до ${formatNumber(availableForEdit)} ${editing.unit}.` : ""}</p>
+          <NodeForm key={`${editing.id}-${editing.name}-${editing.value}`} initialName={editing.name} initialValue={editing.value} unit={editing.unit} minimum={sumValues(editing.children)} available={availableForEdit} submitLabel="Зберегти зміни" onCancel={() => setEditingId(null)} onSubmit={(name, value) => {
+            try {
+              const nextRoot = editPart(root, editing.id, name, value);
+              workspace.change({ root: nextRoot, pathIds }, `Зміни до «${name}» збережено.`);
+              setEditingId(null);
+            } catch (error) { return error instanceof Error ? error.message : "Не вдалося зберегти зміни."; }
+          }} />
+        </Modal>}
+
+        {deleting && root && <Modal title={`Видалити «${deleting.name}»?`} onClose={() => setDeletingId(null)}>
+          <p className="leading-relaxed text-neutral-300">Буде звільнено {formatNumber(deleting.value)} {deleting.unit}.
+            {countParts(deleting) > 0 && ` Також буде видалено вкладені частини: ${countParts(deleting)}.`} Дію можна скасувати кнопкою «Скасувати» у верхній панелі.
+          </p>
+          <div className="mt-6 flex justify-end gap-3">
+            <button type="button" autoFocus onClick={() => setDeletingId(null)} className="rounded-2xl border border-white/15 px-4 py-3 text-sm hover:bg-white/5">Залишити</button>
+            <button type="button" onClick={() => {
+              workspace.change({ root: deletePart(root, deleting.id), pathIds }, `«${deleting.name}» видалено. Можна скасувати дію.`);
+              setDeletingId(null);
+            }} className="rounded-2xl bg-rose-500 px-4 py-3 text-sm font-medium text-white hover:bg-rose-400">Видалити</button>
+          </div>
+        </Modal>}
       </div>
     </main>
   );
