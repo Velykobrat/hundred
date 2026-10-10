@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --background: #111317;
+  --foreground: #f2f3f5;
 }
 
 @theme inline {
@@ -14,15 +15,72 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #111317;
+    --foreground: #f2f3f5;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+* { box-sizing: border-box; }
+button, summary, select { -webkit-tap-highlight-color: transparent; }
+button:not(:disabled), summary { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+button, select, summary { min-height: 44px; }
+input, select { font-size: 16px; }
+.hundred-app { background: var(--background); }
+.brand { color: #f2f3f5; }
+.surface { border: 1px solid #ffffff10; border-radius: 22px; background: #1a1d23; }
+.collection-bar { max-width: 720px; }
+.save-status { color: #9ca3af; }
+.eyebrow { color: #a5b4fc; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+.welcome-layout { display: grid; gap: 36px; margin: 48px 0; align-items: start; }
+.welcome-copy { min-width: 0; }
+.welcome-map { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 58px 38px; gap: 3px; max-width: 360px; margin-top: 32px; border-radius: 16px; overflow: hidden; }
+.welcome-map span { display: flex; align-items: center; padding: 16px; font-size: 12px; background: #555ab5; }
+.welcome-map span:first-child { grid-row: span 2; }
+.welcome-map span:nth-child(2) { background: #277b72; }
+.welcome-map span:last-child { background: #252931; color: #d1d5db; }
+.resource-menu { position: relative; }
+.resource-menu summary { list-style: none; }
+.resource-menu summary::-webkit-details-marker { display: none; }
+.secondary-button { display: flex; align-items: center; justify-content: center; gap: 12px; border: 1px solid #ffffff26; border-radius: 12px; padding: 10px 14px; font-size: 14px; }
+.resource-menu-panel { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; min-width: 248px; padding: 6px; border: 1px solid #ffffff26; border-radius: 14px; background: #252931; box-shadow: 0 16px 48px #0006; }
+.resource-menu-panel button { display: block; width: 100%; padding: 10px 12px; border-radius: 8px; text-align: left; font-size: 14px; }
+.resource-menu-panel button:hover { background: #ffffff0a; }
+.resource-menu-panel button:disabled { opacity: .4; }
+.primary-button { min-height: 44px; border-radius: 12px; background: #e0e3ff; color: #202443; padding: 10px 14px; font-size: 14px; font-weight: 600; }
+.primary-button:hover { background: #f1f2ff; }
+.primary-button:disabled { background: #2c3038; color: #9ca3af; }
+.breadcrumbs { overflow-x: auto; padding-bottom: 4px; }
+.breadcrumbs > div { flex-shrink: 0; }
+.breadcrumbs button { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resource-header > div:first-child { flex: 1 1 260px; }
+.resource-summary { min-width: 180px; }
+.usage-track { height: 4px; margin-top: 14px; border-radius: 4px; background: #30343d; overflow: hidden; }
+.usage-track span { display: block; height: 100%; background: #a5b4fc; }
+.map-tile { min-height: 0; }
+.map-tile:focus-visible { outline-offset: -4px; z-index: 30; }
+.hundred-modal { overscroll-behavior: contain; }
+@media (min-width: 768px) {
+  .welcome-layout { grid-template-columns: minmax(0, 1fr) minmax(320px, 440px); gap: 64px; margin-top: 64px; }
+  .resource-summary { text-align: right; }
+}
+@media (min-width: 1024px) {
+  .resource-map { aspect-ratio: 5 / 4; }
+}
+@media (max-width: 639px) {
+  .welcome-layout { margin-top: 28px; gap: 28px; }
+  .welcome-map { display: none; }
+  .resource-summary { width: 100%; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 12px; }
+  .resource-summary p { margin-top: 0; }
+  .resource-summary p:nth-child(3), .resource-summary .usage-track { grid-column: 1 / -1; }
+  .resource-summary .usage-track { margin-top: 6px; }
+  .hundred-modal { width: calc(100% - 16px); padding: 20px; border-radius: 20px; max-height: 92dvh; }
 }
 
 button:focus-visible {

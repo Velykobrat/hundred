@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hundred — твої 100%",
-  description: "Розподіляй бюджет, час та інші величини на частини й бач їхні пропорції.",
+  title: "Hundred — побач свої ресурси",
+  description: "Hundred — універсальна система роботи з обмеженими величинами. Побач бюджет, час, площу та інші ресурси як ціле, його частини й доступний залишок.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

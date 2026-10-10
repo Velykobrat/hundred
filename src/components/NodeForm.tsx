@@ -52,8 +52,8 @@ export default function NodeForm({ initialName = "", initialValue, unit = "", cr
   return (
     <form noValidate onSubmit={submit} className="space-y-4">
       <div>
-        <label htmlFor={`${id}-name`} className="mb-2 block text-sm text-neutral-300">Назва</label>
-        <input id={`${id}-name`} autoFocus={Boolean(onCancel)} value={name} onChange={(event) => { setName(event.target.value); setErrors((previous) => ({ ...previous, name: undefined })); }} maxLength={120} autoComplete="off" placeholder={createWhole ? "Наприклад: Місячний бюджет" : "Наприклад: Оренда"} className={fieldClass} aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? `${id}-name-error` : undefined} />
+        <label htmlFor={`${id}-name`} className="mb-2 block text-sm text-neutral-300">{createWhole ? "Що розподіляємо?" : "Назва частини"}</label>
+        <input id={`${id}-name`} autoFocus={Boolean(onCancel)} value={name} onChange={(event) => { setName(event.target.value); setErrors((previous) => ({ ...previous, name: undefined })); }} maxLength={120} autoComplete="off" placeholder={createWhole ? "Наприклад: Місячний бюджет" : "Назва категорії"} className={fieldClass} aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? `${id}-name-error` : undefined} />
         {errors.name && <p id={`${id}-name-error`} role="alert" className="mt-2 text-sm text-rose-300">{errors.name}</p>}
       </div>
       <div className={createWhole ? "grid grid-cols-[minmax(0,1fr)_110px] gap-3" : ""}>
@@ -62,7 +62,7 @@ export default function NodeForm({ initialName = "", initialValue, unit = "", cr
             <button type="button" aria-pressed={mode === "amount"} onClick={() => switchMode("amount")} className={`flex-1 rounded-lg px-3 py-2 text-sm ${mode === "amount" ? "bg-neutral-700 text-white" : "text-neutral-400 hover:text-white"}`}>Значення</button>
             <button type="button" aria-pressed={mode === "percent"} onClick={() => switchMode("percent")} className={`flex-1 rounded-lg px-3 py-2 text-sm ${mode === "percent" ? "bg-neutral-700 text-white" : "text-neutral-400 hover:text-white"}`}>Відсоток, %</button>
           </div>}
-          <label htmlFor={`${id}-value`} className="mb-2 block text-sm text-neutral-300">{mode === "percent" ? "Частка, %" : `Значення${!createWhole && unitValue ? `, ${unitValue}` : ""}`}</label>
+          <label htmlFor={`${id}-value`} className="mb-2 block text-sm text-neutral-300">{mode === "percent" ? "Частка, %" : `Обсяг${!createWhole && unitValue ? `, ${unitValue}` : ""}`}</label>
           <input id={`${id}-value`} type="text" inputMode="decimal" autoComplete="off" value={value} onChange={(event) => { setValue(event.target.value); setErrors((previous) => ({ ...previous, value: undefined })); }} placeholder={mode === "percent" ? "Наприклад: 30" : available !== undefined ? `До ${formatNumber(available)}` : "1000"} className={fieldClass} aria-invalid={Boolean(errors.value)} aria-describedby={`${id}-value-hint${errors.value ? ` ${id}-value-error` : ""}`} />
           <p id={`${id}-value-hint`} className="mt-2 text-xs leading-relaxed text-neutral-400">{mode === "percent" ? `Від ${parentName ? `«${parentName}»` : "поточної категорії"}: ${formatNumber(parentValue ?? 0)} ${unitValue}.` : "Можна вводити дроби через кому або крапку."}</p>
           {parentValue !== undefined && previewValue !== null && previewValue > 0 && <p className="mt-3 rounded-xl bg-indigo-400/10 px-3 py-2 text-sm text-indigo-200">{formatNumber(previewValue)} {unitValue} · {formatPercent(previewValue / parentValue * 100)} цього рівня</p>}

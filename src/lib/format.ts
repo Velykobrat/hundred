@@ -4,7 +4,7 @@ export function formatNumber(value: number) {
 export function formatPercent(value: number) {
   return `${new Intl.NumberFormat("uk-UA", { maximumFractionDigits: 1 }).format(value)}%`;
 }
-const COLORS = ["#6366f1", "#ec4899", "#14b8a6", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316", "#ef4444", "#3b82f6", "#a855f7", "#10b981"];
+const COLORS = ["#555ab5", "#9b5075", "#277b72", "#8d692e", "#7557a5", "#317c91", "#657838", "#a3623d", "#a14e56", "#3b6b9d", "#87539a", "#347b5c"];
 export function getNodeColor(id: string) {
   let hash = 0;
   for (let index = 0; index < id.length; index++) hash = id.charCodeAt(index) + ((hash << 5) - hash);

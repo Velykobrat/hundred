@@ -11,7 +11,7 @@ export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: N
   if (free > 0) items.push({ node: { id: "__remaining__", name: "Вільно", value: free, unit: node.unit, children: [] }, x: 0, y: 0, width: 0, height: 0, isRemaining: true });
   const layout = createTreemap(items);
   return (
-          <section className="relative aspect-square w-full overflow-hidden rounded-[32px] border border-white/10 bg-neutral-900 xl:aspect-auto xl:min-h-[700px]">
+          <section aria-label="Карта частин ресурсу" className="resource-map relative aspect-square w-full overflow-hidden rounded-[24px] border border-white/10 bg-neutral-900">
             {layout.map(
               ({
                 node,
@@ -34,7 +34,7 @@ export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: N
                   area < 650;
 
                 const color = isRemaining
-                  ? "#171717"
+                  ? "#202329"
                   : getNodeColor(node.id);
 
                 return (
@@ -49,7 +49,7 @@ export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: N
                         onOpen(node);
                       }
                     }}
-                    className={`group absolute overflow-hidden border border-neutral-950/80 text-left transition-all duration-300 ${
+                    className={`map-tile group absolute overflow-hidden border border-neutral-950/80 text-left transition-all duration-300 ${
                       isRemaining
                         ? "cursor-default"
                         : "cursor-pointer hover:z-20 hover:brightness-110"
@@ -63,7 +63,7 @@ export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: N
                     }}
                   >
                     {isRemaining && area >= 500 && (
-                      <div className="flex h-full flex-col justify-between p-4 text-neutral-600 md:p-6">
+                      <div className="flex h-full flex-col justify-between p-4 text-neutral-300 md:p-6">
                         <span className="text-sm">
                           {formatPercent(percent)}
                         </span>
@@ -94,7 +94,7 @@ export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: N
                         </div>
 
                         <div>
-                          <h2 className="text-lg font-semibold tracking-tight md:text-2xl">
+                          <h2 className="break-words text-base font-medium tracking-tight md:text-xl">
                             {node.name}
                           </h2>
 
