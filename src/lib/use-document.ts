@@ -49,10 +49,10 @@ export function useDocument() {
     }
   }, []);
 
-  const duplicate = () => {
+  const duplicate = (copyName?: string) => {
     try {
       const current = stateRef.current;
-      const document = cloneDocument(current.document, () => crypto.randomUUID(), `Копія — ${current.document.root?.name ?? ""}`);
+      const document = cloneDocument(current.document, () => crypto.randomUUID(), copyName ?? `Копія — ${current.document.root?.name ?? ""}`);
       return send({ type: "replace", collection: putDocument(current.collection, document), notice: "Копію створено. Її можна змінювати незалежно від оригіналу." });
     } catch (error) { return error instanceof Error ? error.message : "Не вдалося створити копію."; }
   };
@@ -64,3 +64,4 @@ export function useDocument() {
 
   return { ...state, change: (document: Document, notice: string) => send({ type: "change", document, notice }), navigate: (pathIds: string[]) => send({ type: "navigate", pathIds }), select: (id: string | null) => send({ type: "select", id }), remove: (id: string) => send({ type: "remove", id }), duplicate, importCollection, undo: () => send({ type: "undo" }), redo: () => send({ type: "redo" }) };
 }
+

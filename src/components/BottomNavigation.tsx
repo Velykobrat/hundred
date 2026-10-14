@@ -1,3 +1,5 @@
+
+import { usePreferences } from "../lib/use-preferences";
 import Icon from "./Icon";
 
 export type Screen = "home" | "resource" | "settings";
@@ -8,11 +10,12 @@ const destinations = [
 ] as const;
 
 export default function BottomNavigation({ screen, onNavigate }: { screen: Screen; onNavigate: (screen: Screen) => void }) {
-  return <nav className="bottom-navigation" aria-label="Основна навігація">
+  const { t } = usePreferences();
+  return <nav className="bottom-navigation" aria-label={t("Основна навігація")}>
     <div className="bottom-navigation-inner">
       {destinations.map((destination) => <button key={destination.screen} type="button" aria-current={screen === destination.screen ? "page" : undefined} onClick={() => onNavigate(destination.screen)}>
         <Icon name={destination.icon} width="23" height="23" />
-        <span>{destination.label}</span>
+        <span>{t(destination.label)}</span>
       </button>)}
     </div>
   </nav>;
