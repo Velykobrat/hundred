@@ -22,6 +22,7 @@ function setScreen(screen: Screen) {
   window.dispatchEvent(new Event("hundred-screen"));
 }
 export function useScreen(): [Screen, (screen: Screen) => void] {
-  const screen = useSyncExternalStore(subscribe, readScreen, () => "home");
+  const screen = useSyncExternalStore<Screen>(subscribe, readScreen, () => "home");
   return [screen, setScreen];
 }
+
