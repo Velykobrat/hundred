@@ -8,6 +8,7 @@ import { findNodeById, updateNodeById } from "../src/lib/tree";
 import { deletePart, editPart, remaining, sumValues, units } from "../src/lib/document";
 import { encodeCollection, MAX_DOCUMENTS } from "../src/lib/collection";
 import { useDocument } from "../src/lib/use-document";
+import { useScreen } from "../src/lib/use-screen";
 import BottomNavigation, { type Screen } from "../src/components/BottomNavigation";
 import ResourceLibrary from "../src/components/ResourceLibrary";
 import SettingsPanel from "../src/components/SettingsPanel";
@@ -35,7 +36,7 @@ function Workspace() {
   const { t, formatNumber, formatPercent, translateMessage } = usePreferences();
   const workspace = useDocument();
   const { root, pathIds } = workspace.document;
-  const [screen, setScreen] = useState<Screen>("home");
+  const [screen, setScreen] = useScreen();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [actionsId, setActionsId] = useState<string | null>(null);
@@ -108,17 +109,15 @@ function Workspace() {
           {screen === "resource" ? <div className="history-controls">
             <button type="button" onClick={() => { clearDialogs(); workspace.undo(); }} disabled={!workspace.past.length} className="icon-button" title={t("Скасувати останню зміну")} aria-label={t("Скасувати останню зміну")}>↶</button>
             <button type="button" onClick={() => { clearDialogs(); workspace.redo(); }} disabled={!workspace.future.length} className="icon-button" title={t("Повторити скасовану зміну")} aria-label={t("Повторити скасовану зміну")}>↷</button>
-          </div> : <span className="app-header-caption">{t("Місце для кожної частини")}</span>}
+          </div> : null}
         </header>
 
-        <div className="save-status">
-          <p role="status" className={workspace.storageError ? "text-sm text-amber-300" : "text-xs text-neutral-400"}>
-            {translateMessage(workspace.storageError) || (workspace.collection.documents.length ? t("✓ Збережено в цьому браузері") : t("Збереження на цьому пристрої"))}
-          </p>
+        {(workspace.storageError || workspace.notice || actionError) && <div className="save-status">
+          {workspace.storageError && <p role="alert" className="text-sm text-amber-300">{translateMessage(workspace.storageError)}</p>}
           {workspace.storageError && <p className="mt-2 text-xs leading-relaxed text-neutral-400">{t("Завантаж резервну копію в налаштуваннях, щоб зберегти поточні дані файлом.")}</p>}
           <p aria-live="polite" aria-atomic="true" className="mt-1 text-sm text-indigo-300">{translateMessage(workspace.notice)}</p>
           {actionError && <p role="alert" className="mt-2 text-sm text-rose-300">{translateMessage(actionError)}</p>}
-        </div>
+        </div>}
 
         {screen === "home" && <ResourceLibrary collection={workspace.collection} onOpen={selectDocument} onCreate={() => selectDocument(null)} onImport={() => setImporting(true)} />}
 

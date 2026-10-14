@@ -104,6 +104,17 @@ svg { flex-shrink: 0; }
 .resource-card-value { color: var(--secondary); font-size: 14px; overflow-wrap: anywhere; }
 .resource-card-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 5px; font-size: 11px; color: var(--muted); }
 .resource-card-footer > span:last-child { color: var(--accent-text); }
+.resource-card-stats { display: flex; flex-direction: column; gap: 5px; }
+.library-header h1.library-description { margin-top: 0; max-width: 430px; color: var(--muted); font-size: 14px; line-height: 1.7; font-weight: 400; letter-spacing: normal; }
+.beginner-guide summary { display: flex; align-items: center; padding: 10px 0; color: var(--accent-text); font-size: 14px; list-style: none; }
+.beginner-guide summary::after { content: "+"; margin-left: auto; font-size: 20px; }
+.beginner-guide details[open] summary::after { content: "−"; }
+.beginner-guide summary::-webkit-details-marker { display: none; }
+.beginner-guide ol { padding-left: 20px; list-style: decimal; color: var(--muted); }
+.beginner-guide li { padding-left: 4px; margin: 16px 0; }
+.beginner-guide h3 { color: var(--foreground); font-size: 13px; font-weight: 500; }
+.beginner-guide li p, .guide-level-hint { margin-top: 5px; font-size: 12px; line-height: 1.7; color: var(--muted); }
+.guide-level-hint { padding-top: 14px; border-top: 1px solid var(--border); }
 .library-empty { display: flex; align-items: flex-start; flex-direction: column; padding: 28px 24px; }
 .library-empty h2 { font-size: 28px; line-height: 1.2; font-weight: 550; letter-spacing: -.035em; margin: 24px 0 14px; }
 .library-empty > p { color: var(--muted); line-height: 1.7; font-size: 14px; max-width: 460px; margin-bottom: 24px; }

@@ -5,13 +5,24 @@ import { MAX_DOCUMENTS } from "../lib/collection";
 import { remaining } from "../lib/document";
 import { getNodeColor } from "../lib/format";
 import Icon from "./Icon";
+import type { Node } from "../types/node";
+
+function countLevels(node: Node): number {
+  return 1 + node.children.reduce((deepest, child) => Math.max(deepest, countLevels(child)), 0);
+}
+function levelLabel(count: number, language: "uk" | "en") {
+  if (language === "en") return count === 1 ? "level" : "levels";
+  if (count % 100 >= 11 && count % 100 <= 14) return "рівнів";
+  if (count % 10 === 1) return "рівень";
+  return count % 10 >= 2 && count % 10 <= 4 ? "рівні" : "рівнів";
+}
 
 export default function ResourceLibrary({ collection, onOpen, onCreate, onImport }: { collection: Collection; onOpen: (id: string) => void; onCreate: () => void; onImport: () => void }) {
-  const { t, formatNumber, formatPercent } = usePreferences();
+  const { t, formatNumber, formatPercent, language } = usePreferences();
   const full = collection.documents.length >= MAX_DOCUMENTS;
   return <section className="resource-library" aria-labelledby="library-heading">
     <header className="library-header">
-      <div><p className="eyebrow">{t("Твій простір")}</p><h1 id="library-heading">{t("Мої ресурси")}</h1><p>{t("Усе, що має межі. Кожному ресурсу — свій розподіл.")}</p></div>
+      <div><h1 id="library-heading" className="library-description">{t("Твої збережені розподіли. Обери ресурс або створи новий.")}</h1></div>
       <button type="button" className="primary-button" onClick={onCreate} disabled={full}><Icon name="plus" /><span>{t("Новий ресурс")}</span></button>
     </header>
     {collection.documents.length ? <>
@@ -19,12 +30,13 @@ export default function ResourceLibrary({ collection, onOpen, onCreate, onImport
         {collection.documents.map(({ root, pathIds }) => {
           if (!root) return null;
           const usedPercent = (root.value - remaining(root)) / root.value * 100;
+          const levels = countLevels(root);
           return <button type="button" key={root.id} className="resource-card surface" onClick={() => onOpen(root.id)} aria-label={t("Відкрити ресурс «{p0}»", {p0: root.name})}>
             <span className="resource-card-top"><span className="resource-card-icon" style={{ color: getNodeColor(root.id) }}><Icon name="resource" width="25" height="25" /></span><Icon name="chevron" /></span>
             <span className="resource-card-name">{root.name}</span>
             <span className="resource-card-value">{formatNumber(root.value)} {root.unit}</span>
             <span className="usage-track" aria-hidden="true"><span style={{ width: `${usedPercent}%` }} /></span>
-            <span className="resource-card-footer"><span>{root.children.length} {" "}{t("частин ·")}{" "}{formatPercent(usedPercent)} {" "}{t("розподілено")}</span><span>{pathIds.length > 1 ? t("Продовжити") : t("Відкрити")}</span></span>
+            <span className="resource-card-footer"><span className="resource-card-stats"><span>{root.children.length} {t("частин ·")} {formatPercent(usedPercent)} {t("розподілено")}</span><span>{levels} {levelLabel(levels, language)}</span></span><span>{pathIds.length > 1 ? t("Продовжити") : t("Відкрити")}</span></span>
           </button>;
         })}
       </div>
