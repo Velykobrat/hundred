@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { preferenceScript } from "../src/lib/preference-script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -21,10 +22,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="uk"
+      data-theme="dark"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head><script id="hundred-preferences" dangerouslySetInnerHTML={{ __html: preferenceScript }} /></head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }
+
 

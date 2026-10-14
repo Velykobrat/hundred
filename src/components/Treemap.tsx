@@ -1,17 +1,20 @@
 
+import { usePreferences } from "../lib/use-preferences";
+
 import type { Node, LayoutItem } from "../types/node";
 import { createTreemap } from "../lib/treemap";
 import { remaining } from "../lib/document";
-import { formatNumber, formatPercent, getNodeColor } from "../lib/format";
+import { getNodeColor } from "../lib/format";
 
 export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: Node) => void }) {
+  const { t, formatNumber, formatPercent } = usePreferences();
   const totalValue = node.value;
   const free = remaining(node);
   const items: LayoutItem[] = node.children.map((child) => ({ node: child, x: 0, y: 0, width: 0, height: 0 }));
-  if (free > 0) items.push({ node: { id: "__remaining__", name: "Вільно", value: free, unit: node.unit, children: [] }, x: 0, y: 0, width: 0, height: 0, isRemaining: true });
+  if (free > 0) items.push({ node: { id: "__remaining__", name: t("Вільно"), value: free, unit: node.unit, children: [] }, x: 0, y: 0, width: 0, height: 0, isRemaining: true });
   const layout = createTreemap(items);
   return (
-          <section aria-label="Карта частин ресурсу" className="resource-map relative aspect-square w-full overflow-hidden rounded-[24px] border border-white/10 bg-neutral-900">
+          <section aria-label={t("Карта частин ресурсу")} className="resource-map relative aspect-square w-full overflow-hidden rounded-[24px] border border-white/10 bg-neutral-900">
             {layout.map(
               ({
                 node,
@@ -34,7 +37,7 @@ export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: N
                   area < 650;
 
                 const color = isRemaining
-                  ? "#202329"
+                  ? "var(--map-free)"
                   : getNodeColor(node.id);
 
                 return (
@@ -42,7 +45,7 @@ export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: N
                     key={node.id}
                     type="button"
                     disabled={isRemaining}
-                    aria-label={`${node.name}: ${formatNumber(node.value)} ${node.unit}, ${formatPercent(node.value / totalValue * 100)}${isRemaining ? "" : ". Відкрити частину"}`}
+                    aria-label={`${node.name}: ${formatNumber(node.value)} ${node.unit}, ${formatPercent(node.value / totalValue * 100)}${isRemaining ? "" : t(". Відкрити частину")}`}
                     title={`${node.name} · ${formatNumber(node.value)} ${node.unit}`}
                     onClick={() => {
                       if (!isRemaining) {
@@ -70,8 +73,7 @@ export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: N
 
                         <div>
                           <p className="font-medium">
-                            Вільно
-                          </p>
+                            {t("Вільно")}{" "}</p>
 
                           <p className="mt-1 text-xs">
                             {formatNumber(node.value)}{" "}
@@ -125,4 +127,5 @@ export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: N
 
   );
 }
+
 

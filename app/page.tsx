@@ -1,12 +1,19 @@
 "use client";
 
+import { PreferencesProvider, usePreferences } from "../src/lib/use-preferences";
+
 import { useMemo, useState } from "react";
 import type { Node } from "../src/types/node";
 import { findNodeById, updateNodeById } from "../src/lib/tree";
 import { deletePart, editPart, remaining, sumValues, units } from "../src/lib/document";
 import { encodeCollection, MAX_DOCUMENTS } from "../src/lib/collection";
 import { useDocument } from "../src/lib/use-document";
-import { formatNumber, formatPercent, getNodeColor } from "../src/lib/format";
+import BottomNavigation, { type Screen } from "../src/components/BottomNavigation";
+import ResourceLibrary from "../src/components/ResourceLibrary";
+import SettingsPanel from "../src/components/SettingsPanel";
+import LevelNavigation from "../src/components/LevelNavigation";
+import PartsList from "../src/components/PartsList";
+import Icon from "../src/components/Icon";
 import NodeForm from "../src/components/NodeForm";
 import Modal from "../src/components/Modal";
 import Treemap from "../src/components/Treemap";
@@ -24,34 +31,63 @@ function findParent(root: Node, id: string): Node | null {
   return null;
 }
 
-export default function Home() {
+function Workspace() {
+  const { t, formatNumber, formatPercent, translateMessage } = usePreferences();
   const workspace = useDocument();
   const { root, pathIds } = workspace.document;
+  const [screen, setScreen] = useState<Screen>("home");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [actionsId, setActionsId] = useState<string | null>(null);
+  const [showingPath, setShowingPath] = useState(false);
   const [deletingWhole, setDeletingWhole] = useState(false);
   const [importing, setImporting] = useState(false);
   const [adding, setAdding] = useState(false);
   const [actionError, setActionError] = useState("");
   const current = useMemo(() => root ? findNodeById(root, pathIds.at(-1) ?? root.id) : null, [root, pathIds]);
   const path = useMemo(() => root ? pathIds.map((id) => findNodeById(root, id)).filter((node): node is Node => node !== null) : [], [root, pathIds]);
+  const partsCount = useMemo(() => root ? countParts(root) : 0, [root]);
   const editing = root && editingId ? findNodeById(root, editingId) : null;
   const deleting = root && deletingId ? findNodeById(root, deletingId) : null;
+  const actionNode = root && actionsId ? findNodeById(root, actionsId) : null;
   const parent = root && editing ? findParent(root, editing.id) : null;
-  const availableForEdit = editing ? parent ? (units(parent.value) - units(sumValues(parent.children.filter((child) => child.id !== editing.id)))) / 1_000_000 : undefined : undefined;
+  const availableForEdit = editing && parent ? (units(parent.value) - units(sumValues(parent.children.filter((child) => child.id !== editing.id)))) / 1_000_000 : undefined;
   const free = current ? remaining(current) : 0;
   const used = current ? sumValues(current.children) : 0;
+  const atLimit = path.length >= 41 || partsCount >= 4999;
 
-  function openNode(node: Node) {
+  function clearDialogs() {
     setAdding(false);
-    workspace.navigate([...pathIds, node.id]);
     setEditingId(null);
     setDeletingId(null);
+    setActionsId(null);
+    setShowingPath(false);
+    setDeletingWhole(false);
+    setImporting(false);
+  }
+  function goToScreen(next: Screen) {
+    clearDialogs();
+    setActionError("");
+    setScreen(next);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+  function goToPath(next: string[]) {
+    clearDialogs();
+    workspace.navigate(next);
+    setScreen("resource");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+  function openNode(node: Node) {
+    goToPath([...pathIds, node.id]);
+  }
+  function selectDocument(id: string | null) {
+    workspace.select(id);
+    goToScreen("resource");
   }
   function downloadBackup() {
     let data = encodeCollection(workspace.collection);
     if (!workspace.collection.documents.length && workspace.storageError) {
-      try { data = localStorage.getItem("hundred.document.v1") ?? data; } catch { /* Export the current empty document if storage is inaccessible. */ }
+      try { data = localStorage.getItem("hundred.document.v1") ?? data; } catch { /* Preserve the export option when storage is inaccessible. */ }
     }
     const blob = new Blob([data], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -61,190 +97,152 @@ export default function Home() {
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  function selectDocument(id: string | null) {
-    setAdding(false);
-    workspace.select(id);
-    setEditingId(null);
-    setDeletingId(null);
-    setDeletingWhole(false);
-    setActionError("");
-  }
 
-  if (!workspace.ready) return <main className="flex min-h-screen items-center justify-center bg-neutral-950 p-6 text-neutral-300" role="status">Відновлюю твій розподіл…</main>;
+  if (!workspace.ready) return <main className="flex min-h-screen items-center justify-center bg-neutral-950 p-6 text-neutral-300" role="status">{t("Відновлюю твій розподіл…")}</main>;
 
   return (
     <main className="hundred-app min-h-screen px-4 py-5 text-white sm:px-8 sm:py-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-5">
-          <button type="button" onClick={() => root && workspace.navigate([root.id])} className="brand rounded-lg text-xl font-semibold tracking-tight" aria-label="Hundred — повернутися до цілого">Hundred</button>
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => { workspace.undo(); setEditingId(null); setDeletingId(null); }} disabled={!workspace.past.length} className="rounded-xl border border-white/15 px-3 py-2 text-sm hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" title="Скасувати останню зміну" aria-label="Скасувати останню зміну"><span aria-hidden="true">↶</span><span className="hidden sm:inline"> Скасувати</span></button>
-            <button type="button" onClick={() => { workspace.redo(); setEditingId(null); setDeletingId(null); }} disabled={!workspace.future.length} className="rounded-xl border border-white/15 px-3 py-2 text-sm hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" title="Повторити скасовану зміну" aria-label="Повторити скасовану зміну"><span aria-hidden="true">↷</span><span className="hidden sm:inline"> Повторити</span></button>
+        <header className="app-header">
+          <button type="button" onClick={() => goToScreen("home")} className="brand" aria-label={t("Hundred — на головну")}>Hundred<span className="brand-dot" aria-hidden="true" /></button>
+          {screen === "resource" ? <div className="history-controls">
+            <button type="button" onClick={() => { clearDialogs(); workspace.undo(); }} disabled={!workspace.past.length} className="icon-button" title={t("Скасувати останню зміну")} aria-label={t("Скасувати останню зміну")}>↶</button>
+            <button type="button" onClick={() => { clearDialogs(); workspace.redo(); }} disabled={!workspace.future.length} className="icon-button" title={t("Повторити скасовану зміну")} aria-label={t("Повторити скасовану зміну")}>↷</button>
+          </div> : <span className="app-header-caption">{t("Місце для кожної частини")}</span>}
+        </header>
 
-          </div>
-        </div>
-
-        <section aria-label="Збережені розподіли" className="collection-bar mb-5">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-0 flex-1 basis-52">
-              <label htmlFor="hundred-document" className="mb-2 block text-xs text-neutral-400">Мої ресурси</label>
-              <select id="hundred-document" value={workspace.collection.activeId ?? ""} onChange={(event) => selectDocument(event.target.value || null)} className="w-full rounded-xl border border-white/15 bg-neutral-950 px-3 py-3 text-sm text-white outline-none focus:border-indigo-400">
-                <option value="">Новий розподіл</option>
-                {workspace.collection.documents.map(({ root: item }) => <option key={item!.id} value={item!.id}>{item!.name} · {formatNumber(item!.value)} {item!.unit}</option>)}
-              </select>
-            </div>
-            <button type="button" disabled={workspace.collection.documents.length >= MAX_DOCUMENTS} onClick={() => selectDocument(null)} className="rounded-xl border border-white/15 px-3 py-3 text-sm hover:bg-white/5 disabled:opacity-40">+ Новий</button>
-            <details className="resource-menu" onClick={(event) => { if ((event.target as HTMLElement).closest("button")) event.currentTarget.open = false; }} onKeyDown={(event) => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}>
-              <summary className="secondary-button">Дії <span aria-hidden="true">⌄</span></summary>
-              <div className="resource-menu-panel">
-                {root && <button type="button" disabled={workspace.collection.documents.length >= MAX_DOCUMENTS} onClick={() => { setActionError(workspace.duplicate() ?? ""); setEditingId(null); setDeletingId(null); }}>Створити копію</button>}
-                <button type="button" onClick={() => setImporting(true)}>Імпортувати файл</button>
-                {(workspace.collection.documents.length > 0 || workspace.storageError) && <button type="button" onClick={downloadBackup}>Завантажити резервну копію</button>}
-                {root && <button type="button" className="text-rose-300" onClick={() => setDeletingWhole(true)}>Видалити ресурс</button>}
-              </div>
-            </details>
-          </div>
-          {actionError && <p role="alert" className="mt-3 text-sm text-rose-300">{actionError}</p>}
-        </section>
-
-        <div className="save-status mb-5 space-y-1">
+        <div className="save-status">
           <p role="status" className={workspace.storageError ? "text-sm text-amber-300" : "text-xs text-neutral-400"}>
-            {workspace.storageError ?? (root ? "✓ Збережено в цьому браузері на цьому пристрої" : "Розподіл зберігатиметься в цьому браузері на цьому пристрої")}
+            {translateMessage(workspace.storageError) || (workspace.collection.documents.length ? t("✓ Збережено в цьому браузері") : t("Збереження на цьому пристрої"))}
           </p>
-          {workspace.storageError && <p className="text-xs leading-relaxed text-neutral-400">Для збереження браузеру потрібен доступ до локального сховища. Резервна копія дозволяє завантажити дані файлом.</p>}
-          <p aria-live="polite" aria-atomic="true" className="text-sm text-indigo-300">{workspace.notice}</p>
+          {workspace.storageError && <p className="mt-2 text-xs leading-relaxed text-neutral-400">{t("Завантаж резервну копію в налаштуваннях, щоб зберегти поточні дані файлом.")}</p>}
+          <p aria-live="polite" aria-atomic="true" className="mt-1 text-sm text-indigo-300">{translateMessage(workspace.notice)}</p>
+          {actionError && <p role="alert" className="mt-2 text-sm text-rose-300">{translateMessage(actionError)}</p>}
         </div>
 
-        {!root ? (
-          <>
-            <div className="welcome-layout">
-            <div className="welcome-copy">
-              <p className="eyebrow">Кожен ресурс має межі</p>
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl">Побач ціле.<br /><span className="text-neutral-400">Знайди місце кожній частині.</span></h1>
-              <p className="mt-6 max-w-md text-lg leading-relaxed text-neutral-400">Hundred — спосіб бачити обмежені ресурси. Вкажи, скільки маєш, розподіли на частини й побач, що залишається.</p>
-              <p className="mt-5 text-sm text-neutral-400">Гроші · час · площа · будь-яка вимірювана величина</p>
-              <div className="welcome-map" aria-hidden="true"><span>Ціле</span><span>Частина</span><span>Вільно</span></div>
-            </div>
-            <section className="surface p-5 sm:p-7">
-              <h2 className="mb-2 text-xl font-medium">З якого ресурсу почнемо?</h2>
-              <p className="mb-6 text-sm text-neutral-400">Назва, загальний обсяг та одиниця виміру.</p>
-              <NodeForm createWhole submitLabel="Створити ресурс" onCancel={workspace.collection.documents.length ? () => selectDocument(workspace.collection.documents[0].root!.id) : undefined} onSubmit={(name, value, unit) => {
+        {screen === "home" && <ResourceLibrary collection={workspace.collection} onOpen={selectDocument} onCreate={() => selectDocument(null)} onImport={() => setImporting(true)} />}
+
+        {screen === "settings" && <SettingsPanel count={workspace.collection.documents.length} storageError={workspace.storageError} canExport={workspace.collection.documents.length > 0 || Boolean(workspace.storageError)} onExport={downloadBackup} onImport={() => setImporting(true)} />}
+
+        {screen === "resource" && (!root ? (
+          <section className="create-resource">
+            <header className="screen-heading"><p className="eyebrow">{t("Почни з цілого")}</p><h1>{t("Новий ресурс")}</h1><p>{t("Що маєш, скільки та в яких одиницях?")}</p></header>
+            {workspace.collection.documents.length >= MAX_DOCUMENTS ? <div className="surface p-6"><p>{t("Збережено всі")}{" "}{MAX_DOCUMENTS} {" "}{t("ресурсів. Звільни місце, перш ніж створювати новий.")}</p><button type="button" className="primary-button mt-5" onClick={() => goToScreen("home")}>{t("Мої ресурси")}</button></div> : <div className="surface p-5 sm:p-7">
+              <NodeForm createWhole submitLabel={t("Створити ресурс")} onCancel={() => goToScreen("home")} onSubmit={(name, value, unit) => {
                 const newRoot: Node = { id: crypto.randomUUID(), name, value, unit, children: [] };
-                return workspace.change({ root: newRoot, pathIds: [newRoot.id] }, "Ціле створено. Додай першу частину.");
+                return workspace.change({ root: newRoot, pathIds: [newRoot.id] }, t("Ціле створено. Додай першу частину."));
               }} />
-            </section>
-            </div>
-          </>
+            </div>}
+          </section>
         ) : current ? (
           <>
-            <nav aria-label="Шлях у розподілі" className="breadcrumbs mb-5 flex items-center gap-2 text-sm text-neutral-400">
-              {path.length > 1 && <button type="button" onClick={() => workspace.navigate(pathIds.slice(0, -1))} className="mr-2 rounded-xl border border-white/15 px-3 py-2 hover:text-white">← Назад</button>}
-              {path.map((node, index) => <div key={node.id} className="flex items-center gap-2">
-                <button type="button" aria-current={index === path.length - 1 ? "page" : undefined} onClick={() => workspace.navigate(pathIds.slice(0, index + 1))} className="rounded-md py-1 hover:text-white">{node.name}</button>
-                {index < path.length - 1 && <span aria-hidden="true" className="text-neutral-600">/</span>}
-              </div>)}
-            </nav>
-
-            <header className="resource-header mb-6 flex flex-wrap items-end justify-between gap-5">
-              <div className="min-w-0">
-                <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">{path.length === 1 ? "Ціле" : "Частина"}</p>
-                <h1 className="mt-2 break-words text-3xl font-semibold tracking-tight sm:text-5xl">{current.name}</h1>
-                <p className="mt-3 text-neutral-300">{formatNumber(current.value)} {current.unit} <span className="mx-2 text-neutral-600">·</span> 100% цього рівня</p>
-                {current.id !== root.id && <p className="mt-2 text-sm text-neutral-400">{formatPercent(current.value / root.value * 100)} від усього «{root.name}»</p>}
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <button type="button" className="primary-button" disabled={free === 0 || path.length >= 41 || countParts(root) >= 4999} onClick={() => setAdding(true)}>+ Додати частину</button>
-                  <button type="button" onClick={() => setEditingId(current.id)} className="rounded-xl px-3 py-2 text-sm text-neutral-300 hover:bg-white/5">Редагувати</button>
+            <LevelNavigation path={path} onNavigate={goToPath} showingPath={showingPath} onShowPath={setShowingPath} />
+            <header className="resource-header">
+              <div className="resource-title-row">
+                <div className="min-w-0">
+                  <p className="eyebrow">{path.length === 1 ? t("Ціле") : t("Частина · рівень {p0}", {p0: path.length})}</p>
+                  <h1>{current.name}</h1>
+                  <p className="resource-value">{formatNumber(current.value)} {current.unit}<span>{t("100% цього рівня")}</span></p>
+                  {current.id !== root.id && <p className="resource-root-share">{formatPercent(current.value / root.value * 100)} {t("від усього «{name}»", { name: root.name })}</p>}
                 </div>
-
+                <button type="button" className="icon-button" aria-label={t("Дії для «{p0}»", {p0: current.name})} onClick={() => setActionsId(current.id)}><Icon name="more" /></button>
               </div>
               <div className="resource-summary">
-                <p className="text-sm text-neutral-400">Розподілено</p>
-                <p className="mt-1 text-2xl font-medium">{formatPercent(used / current.value * 100)}</p>
-                <p className="mt-1 text-sm text-neutral-400">Вільно: {formatNumber(free)} {current.unit}</p>
+                <p>{t("Розподілено")}</p><p>{formatPercent(used / current.value * 100)}</p>
+                <p>{t("Вільно:")}{" "}{formatNumber(free)} {current.unit}</p>
                 <div className="usage-track" aria-hidden="true"><span style={{ width: `${Math.min(100, used / current.value * 100)}%` }} /></div>
               </div>
+              <button type="button" className="primary-button add-part-button" disabled={free === 0 || atLimit} onClick={() => setAdding(true)}><Icon name="plus" /><span>{t("Додати частину")}</span></button>
             </header>
-
-            <div className="workspace-grid grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-              <div className="min-w-0"><div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-sm text-neutral-300">Карта ресурсу</h2><p className="text-xs text-neutral-400">Натисни частину, щоб відкрити</p></div><Treemap node={current} onOpen={openNode} /></div>
-              <aside className="space-y-6">
-                <section className="surface p-4 sm:p-5">
-                  <div className="flex items-center justify-between gap-4">
-                    <h2 className="text-lg font-medium">Частини <span className="ml-1 text-sm text-neutral-400">{current.children.length}</span></h2>
-                  </div>
-                  {!current.children.length ? <p className="mt-6 text-sm leading-relaxed text-neutral-400">Тут будуть частини ресурсу. Додай першу — її розмір на карті покаже, скільки вона займає.</p> :
-                    <ul className="mt-5 space-y-3">
-                      {current.children.map((child) => <li key={child.id} className="rounded-2xl border border-white/10 p-3">
-                        <button type="button" onClick={() => openNode(child)} className="flex w-full items-center gap-3 rounded-lg text-left hover:brightness-125">
-                          <span className="h-4 w-4 shrink-0 rounded-[5px]" style={{ backgroundColor: getNodeColor(child.id) }} aria-hidden="true" />
-                          <span className="min-w-0 flex-1">
-                            <span className="block break-words text-sm text-neutral-100">{child.name}</span>
-                            <span className="mt-1 block text-xs text-neutral-400">{formatNumber(child.value)} {child.unit}{child.children.length ? ` · вкладених: ${child.children.length}` : ""}</span>
-                          </span>
-                          <span className="shrink-0 text-sm">{formatPercent(child.value / current.value * 100)} <span aria-hidden="true">↗</span></span>
-                        </button>
-                        <div className="mt-3 flex gap-2 border-t border-white/10 pt-2">
-                          <button type="button" onClick={() => setEditingId(child.id)} aria-label={`Редагувати «${child.name}»`} className="rounded-lg px-2 py-2 text-xs text-neutral-300 hover:bg-white/5">Редагувати</button>
-                          <button type="button" onClick={() => setDeletingId(child.id)} aria-label={`Видалити «${child.name}»`} className="rounded-lg px-2 py-2 text-xs text-rose-300 hover:bg-rose-400/10">Видалити</button>
-                        </div>
-                      </li>)}
-                    </ul>}
-                  {free === 0 && <p className="mt-4 text-sm text-neutral-400">Усе розподілено. Відредагуй частини, щоб звільнити місце.</p>}
-                  {(path.length >= 41 || countParts(root) >= 4999) && <p className="mt-4 text-sm text-amber-300">Досягнуто межі розміру. Можна редагувати наявні частини.</p>}
-                  {free > 0 && <div className="mt-5 flex justify-between gap-3 border-t border-white/10 pt-4 text-sm text-neutral-400"><span>Вільно</span><span>{formatPercent(free / current.value * 100)}</span></div>}
-                </section>
-              </aside>
+            <div className="workspace-grid">
+              <div className="min-w-0">
+                <div className="map-heading"><h2>{t("Карта ресурсу")}</h2><span>{t("Натисни частину, щоб відкрити")}</span></div>
+                <Treemap node={current} onOpen={openNode} />
+              </div>
+              <aside><PartsList node={current} free={free} atLimit={atLimit} onOpen={openNode} onActions={setActionsId} /></aside>
             </div>
           </>
-        ) : <p role="alert">Не вдалося відкрити частину. <button type="button" onClick={() => workspace.navigate([root.id])} className="underline">Повернутися до цілого</button></p>}
+        ) : <p role="alert">{t("Не вдалося відкрити частину.")}{" "}<button type="button" onClick={() => goToPath([root.id])} className="underline">{t("Повернутися до цілого")}</button></p>)}
 
-        {adding && current && root && (<Modal title="Додати частину" onClose={() => setAdding(false)}>
-                  <p className="mb-5 mt-2 text-sm text-neutral-400">Доступно {formatNumber(free)} {current.unit}</p>
-                  {path.length >= 41 || countParts(root) >= 4999 ? <p className="text-sm text-amber-300">Досягнуто межі розміру розподілу. Відредагуй наявні частини.</p> :
-                    <NodeForm key={current.id} unit={current.unit} available={free} parentValue={current.value} parentName={current.name} submitLabel="Додати частину" onCancel={() => setAdding(false)} onSubmit={(name, value) => {
-                      if (units(value) > units(remaining(current))) return "Обсяг змінився. Перевір доступний залишок.";
-                      const child: Node = { id: crypto.randomUUID(), name, value, unit: current.unit, children: [] };
-                      const nextRoot = updateNodeById(root, current.id, (node) => ({ ...node, children: [...node.children, child] }));
-                      const issue = workspace.change({ root: nextRoot, pathIds }, `Додано «${name}».`);
-                      if (issue) return issue;
-                      setAdding(false);
-                    }} />}
-                </Modal>)}
+        {actionNode && root && <Modal title={actionNode.name} onClose={() => setActionsId(null)} variant="sheet">
+          <p className="mb-5 text-sm text-neutral-400">{formatNumber(actionNode.value)} {actionNode.unit}{actionNode.children.length ? t(" · частин: {p0}", {p0: actionNode.children.length}) : ""}</p>
+          <div className="action-sheet-list">
+            {actionNode.id !== current?.id && <button type="button" onClick={() => {
+              const actionParent = findParent(root, actionNode.id);
+              const parentIndex = path.findIndex((node) => node.id === actionParent?.id);
+              if (parentIndex >= 0) goToPath([...path.slice(0, parentIndex + 1).map((node) => node.id), actionNode.id]);
+            }}><Icon name="resource" /><span>{t("Відкрити частину")}</span><Icon name="chevron" width="16" height="16" /></button>}
+            <button type="button" onClick={() => { setActionsId(null); setEditingId(actionNode.id); }}><Icon name="edit" /><span>{actionNode.id === root.id ? t("Редагувати ресурс") : t("Редагувати частину")}</span></button>
+            {actionNode.id === root.id && <button type="button" disabled={workspace.collection.documents.length >= MAX_DOCUMENTS} onClick={() => {
+              const issue = workspace.duplicate(t("Копія — {name}", { name: root.name }));
+              if (issue) { setActionError(issue); setActionsId(null); } else goToScreen("resource");
+            }}><Icon name="copy" /><span>{t("Створити копію ресурсу")}</span></button>}
+            <button type="button" className="action-danger" onClick={() => { setActionsId(null); if (actionNode.id === root.id) setDeletingWhole(true); else setDeletingId(actionNode.id); }}><Icon name="trash" /><span>{actionNode.id === root.id ? t("Видалити ресурс") : t("Видалити частину")}</span></button>
+          </div>
+        </Modal>}
 
-        {editing && root && <Modal key={editing.id} title={editing.id === root.id ? "Редагувати ціле" : "Редагувати частину"} onClose={() => setEditingId(null)}>
-          <p className="mb-5 text-sm leading-relaxed text-neutral-400">Зміни назву або значення. Вкладені частини залишаться.{availableForEdit !== undefined ? ` Доступно до ${formatNumber(availableForEdit)} ${editing.unit}.` : ""}</p>
-          <NodeForm key={`${editing.id}-${editing.name}-${editing.value}`} initialName={editing.name} initialValue={editing.value} unit={editing.unit} minimum={sumValues(editing.children)} available={availableForEdit} parentValue={parent?.value} parentName={parent?.name} submitLabel="Зберегти зміни" onCancel={() => setEditingId(null)} onSubmit={(name, value) => {
+        {adding && current && root && <Modal title={t("Додати частину")} onClose={() => setAdding(false)}>
+          <p className="mb-5 text-sm text-neutral-400">{t("Доступно")}{" "}{formatNumber(free)} {current.unit}</p>
+          {atLimit ? <p className="text-sm text-amber-300">{t("Досягнуто межі розміру розподілу. Відредагуй наявні частини.")}</p> :
+            <NodeForm key={current.id} unit={current.unit} available={free} parentValue={current.value} parentName={current.name} submitLabel={t("Додати частину")} onCancel={() => setAdding(false)} onSubmit={(name, value) => {
+              if (units(value) > units(remaining(current))) return t("Обсяг змінився. Перевір доступний залишок.");
+              const child: Node = { id: crypto.randomUUID(), name, value, unit: current.unit, children: [] };
+              const nextRoot = updateNodeById(root, current.id, (node) => ({ ...node, children: [...node.children, child] }));
+              const issue = workspace.change({ root: nextRoot, pathIds }, t("Додано «{p0}».", {p0: name}));
+              if (issue) return issue;
+              setAdding(false);
+            }} />}
+        </Modal>}
+
+        {editing && root && <Modal key={editing.id} title={editing.id === root.id ? t("Редагувати ціле") : t("Редагувати частину")} onClose={() => setEditingId(null)}>
+          <p className="mb-5 text-sm leading-relaxed text-neutral-400">{t("Зміни назву або значення. Вкладені частини залишаться.")}{availableForEdit !== undefined ? t(" Доступно до {p0} {p1}.", {p0: formatNumber(availableForEdit), p1: editing.unit}) : ""}</p>
+          <NodeForm key={`${editing.id}-${editing.name}-${editing.value}`} initialName={editing.name} initialValue={editing.value} unit={editing.unit} minimum={sumValues(editing.children)} available={availableForEdit} parentValue={parent?.value} parentName={parent?.name} submitLabel={t("Зберегти зміни")} onCancel={() => setEditingId(null)} onSubmit={(name, value) => {
             try {
               const nextRoot = editPart(root, editing.id, name, value);
-              const issue = workspace.change({ root: nextRoot, pathIds }, `Зміни до «${name}» збережено.`);
+              const issue = workspace.change({ root: nextRoot, pathIds }, t("Зміни до «{p0}» збережено.", {p0: name}));
               if (issue) return issue;
               setEditingId(null);
-            } catch (error) { return error instanceof Error ? error.message : "Не вдалося зберегти зміни."; }
+            } catch (error) { return error instanceof Error ? error.message : t("Не вдалося зберегти зміни."); }
           }} />
         </Modal>}
 
-        {deletingWhole && root && <Modal title={`Видалити розподіл «${root.name}»?`} onClose={() => setDeletingWhole(false)}>
-          <p className="text-sm leading-relaxed text-neutral-300">Буде видалено весь цей розподіл разом із частинами. Інші розподіли залишаться. Дію можна скасувати у верхній панелі.</p>
+        {deletingWhole && root && <Modal title={t("Видалити ресурс «{p0}»?", {p0: root.name})} onClose={() => setDeletingWhole(false)}>
+          <p className="text-sm leading-relaxed text-neutral-300">{t("Буде видалено весь ресурс разом із частинами. Інші ресурси залишаться. Дію можна скасувати у верхній панелі вкладки «Ресурс».")}</p>
           <div className="mt-6 flex justify-end gap-3">
-            <button type="button" autoFocus onClick={() => setDeletingWhole(false)} className="rounded-2xl border border-white/15 px-4 py-3 text-sm">Залишити</button>
-            <button type="button" onClick={() => { workspace.remove(root.id); setDeletingWhole(false); }} className="rounded-2xl bg-rose-500 px-4 py-3 text-sm font-medium">Видалити розподіл</button>
+            <button type="button" autoFocus onClick={() => setDeletingWhole(false)} className="rounded-2xl border border-white/15 px-4 py-3 text-sm">{t("Залишити")}</button>
+            <button type="button" onClick={() => {
+              const issue = workspace.remove(root.id);
+              if (issue) setActionError(issue); else goToScreen("home");
+              setDeletingWhole(false);
+            }} className="rounded-2xl bg-rose-500 px-4 py-3 text-sm font-medium">{t("Видалити ресурс")}</button>
           </div>
         </Modal>}
-        {importing && <ImportBackup currentCount={workspace.collection.documents.length} onImport={workspace.importCollection} onClose={() => setImporting(false)} />}
 
-        {deleting && root && <Modal title={`Видалити «${deleting.name}»?`} onClose={() => setDeletingId(null)}>
-          <p className="leading-relaxed text-neutral-300">Буде звільнено {formatNumber(deleting.value)} {deleting.unit}.
-            {countParts(deleting) > 0 && ` Також буде видалено вкладені частини: ${countParts(deleting)}.`} Дію можна скасувати кнопкою «Скасувати» у верхній панелі.
-          </p>
+        {importing && <ImportBackup currentCount={workspace.collection.documents.length} onImport={(incoming) => {
+          const issue = workspace.importCollection(incoming);
+          if (!issue) goToScreen("resource");
+          return issue;
+        }} onClose={() => setImporting(false)} />}
+
+        {deleting && root && <Modal title={t("Видалити «{p0}»?", {p0: deleting.name})} onClose={() => setDeletingId(null)}>
+          <p className="leading-relaxed text-neutral-300">{t("Буде звільнено")}{" "}{formatNumber(deleting.value)} {deleting.unit}.
+            {countParts(deleting) > 0 && t(" Також буде видалено вкладені частини: {p0}.", {p0: countParts(deleting)})} {" "}{t("Дію можна скасувати кнопкою «Скасувати» у верхній панелі.")}{" "}</p>
           <div className="mt-6 flex justify-end gap-3">
-            <button type="button" autoFocus onClick={() => setDeletingId(null)} className="rounded-2xl border border-white/15 px-4 py-3 text-sm hover:bg-white/5">Залишити</button>
+            <button type="button" autoFocus onClick={() => setDeletingId(null)} className="rounded-2xl border border-white/15 px-4 py-3 text-sm">{t("Залишити")}</button>
             <button type="button" onClick={() => {
-              workspace.change({ root: deletePart(root, deleting.id), pathIds }, `«${deleting.name}» видалено. Можна скасувати дію.`);
+              const issue = workspace.change({ root: deletePart(root, deleting.id), pathIds }, t("«{p0}» видалено. Можна скасувати дію.", {p0: deleting.name}));
+              if (issue) setActionError(issue);
               setDeletingId(null);
-            }} className="rounded-2xl bg-rose-500 px-4 py-3 text-sm font-medium text-white hover:bg-rose-400">Видалити</button>
+            }} className="rounded-2xl bg-rose-500 px-4 py-3 text-sm font-medium">{t("Видалити")}</button>
           </div>
         </Modal>}
       </div>
+      <BottomNavigation screen={screen} onNavigate={goToScreen} />
     </main>
   );
+}
+
+
+export default function Home() {
+  return <PreferencesProvider><Workspace /></PreferencesProvider>;
 }

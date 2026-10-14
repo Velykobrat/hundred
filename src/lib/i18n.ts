@@ -1,0 +1,251 @@
+export type Language = "uk" | "en";
+export type Theme = "dark" | "light" | "system";
+export type TranslationParams = Record<string, string | number>;
+export const english: Record<string, string> = {
+  " · частин: {p0}": " · parts: {p0}",
+  " Доступно до {p0} {p1}.": " Up to {p0} {p1} available.",
+  " Також буде видалено вкладені частини: {p0}.": " Nested parts will also be deleted: {p0}.",
+  ". Відкрити частину": ". Open part",
+  "100% цього рівня": "100% of this level",
+  "Hundred — на головну": "Hundred — go to Home",
+  "«{p0}» видалено. Можна скасувати дію.": "“{p0}” deleted. You can undo this.",
+  "Імпорт резервної копії": "Import backup",
+  "Імпортувати файл": "Import file",
+  "Інші частини «": "Other parts of “",
+  "Інші частини «{name}»": "Other parts of “{name}”",
+  "від усього «{name}»": "of the whole “{name}”",
+  "Автозбереження": "Autosave",
+  "Батьківський рівень": "Parent level",
+  "Буде видалено весь ресурс разом із частинами. Інші ресурси залишаться. Дію можна скасувати у верхній панелі вкладки «Ресурс».": "This resource and all its parts will be deleted. Other resources will remain. You can undo this from the top of the Resource screen.",
+  "Буде додано розподілів:": "Resources to add:",
+  "Буде звільнено": "This will free up",
+  "Вибери JSON-копію Hundred. Розподіли з файлу буде додано як окремі копії; наявні залишаться. Підтримуються також копії попередньої версії.": "Choose a Hundred JSON backup. Resources from the file will be added as separate copies; existing resources will remain. Backups from the previous version are also supported.",
+  "Видалити": "Delete",
+  "Видалити «{p0}»?": "Delete “{p0}”?",
+  "Видалити ресурс": "Delete resource",
+  "Видалити ресурс «{p0}»?": "Delete resource “{p0}”?",
+  "Видалити частину": "Delete part",
+  "Вкажи відсоток більше 0 і до 100, з не більш ніж 6 знаками після коми.": "Enter a percentage greater than 0 and up to 100, with at most 6 decimal places.",
+  "Вкладені частини вже займають {p0} {p1}. Значення не може бути меншим.": "Nested parts already use {p0} {p1}. The amount cannot be smaller.",
+  "Від {p0}: {p1} {p2}.": "Of {p0}: {p1} {p2}.",
+  "Відкрити": "Open",
+  "Відкрити «{p0}»": "Open “{p0}”",
+  "Відкрити навігацію по рівнях": "Open level navigation",
+  "Відкрити ресурс «{p0}»": "Open resource “{p0}”",
+  "Відкрити частину": "Open part",
+  "Відновлюю твій розподіл…": "Restoring your resources…",
+  "Відсоток, %": "Percentage, %",
+  "Вільно": "Available",
+  "Вільно:": "Available:",
+  "Головна": "Home",
+  "Дані на цьому пристрої": "Data on this device",
+  "До 4 МБ. Зараз збережено": "Up to 4 MB. Currently saved:",
+  "До {p0}": "Up to {p0}",
+  "До батьківського рівня «{p0}»": "Go to parent “{p0}”",
+  "Додай першу частину — її розмір на карті покаже, скільки вона займає.": "Add the first part — its size on the map will show how much it uses.",
+  "Додано «{p0}».": "Added “{p0}”.",
+  "Додати ресурси з резервної копії": "Add resources from a backup",
+  "Додати розподіли": "Add resources",
+  "Додати частину": "Add part",
+  "Доступно": "Available",
+  "Доступно лише {p0} {p1}.": "Only {p0} {p1} available.",
+  "Досягнуто межі розміру розподілу. Відредагуй наявні частини.": "This resource has reached its size limit. Edit the existing parts.",
+  "Досягнуто межі розміру. Можна редагувати наявні частини.": "Size limit reached. You can still edit the existing parts.",
+  "Дію можна скасувати кнопкою «Скасувати» у верхній панелі.": "You can undo this using the Undo button at the top.",
+  "Дії для «{p0}»": "Actions for “{p0}”",
+  "Завантаж копію перед очищенням браузера або для перенесення на інший пристрій.": "Download a backup before clearing your browser or moving to another device.",
+  "Завантаж резервну копію в налаштуваннях, щоб зберегти поточні дані файлом.": "Download a backup in Settings to save your current data as a file.",
+  "Завантажити резервну копію": "Download backup",
+  "Закрити вікно": "Close dialog",
+  "Залишити": "Keep",
+  "Зберегти зміни": "Save changes",
+  "Збереження на цьому пристрої": "Saved on this device",
+  "Збереження та перенесення твоїх ресурсів.": "Save and transfer your resources.",
+  "Збережено всі": "All",
+  "Збережено ресурсів": "Saved resources",
+  "Зміни до «{p0}» збережено.": "Changes to “{p0}” saved.",
+  "Зміни назву або значення. Вкладені частини залишаться.": "Change the name or amount. Nested parts will remain.",
+  "Знайди місце кожній частині.": "Find a place for every part.",
+  "Значення": "Amount",
+  "Карта ресурсу": "Resource map",
+  "Карта частин ресурсу": "Map of resource parts",
+  "Маю резервну копію": "I have a backup",
+  "Можна вводити дроби через кому або крапку.": "Use a dot or comma for decimals.",
+  "Можна зберегти до {p0} розподілів. Спочатку звільни місце.": "You can save up to {p0} resources. Free up space first.",
+  "Мої ресурси": "My resources",
+  "Місце для кожної частини": "A place for every part",
+  "На рівень вище": "Go up one level",
+  "Навігація між рівнями": "Level navigation",
+  "Назва категорії": "Part name",
+  "Назва частини": "Part name",
+  "Налаштування": "Settings",
+  "Наприклад: 30": "For example: 30",
+  "Наприклад: Місячний бюджет": "For example: Monthly budget",
+  "Натисни частину, щоб відкрити": "Tap a part to open it",
+  "Натисни, щоб відкрити": "Tap to open",
+  "Не вдалося відкрити частину.": "Could not open this part.",
+  "Не вдалося зберегти зміни.": "Could not save changes.",
+  "Не вдалося прочитати файл.": "Could not read the file.",
+  "Новий ресурс": "New resource",
+  "Обери рівень або іншу частину поруч.": "Choose a level or another part alongside this one.",
+  "Обсяг змінився. Перевір доступний залишок.": "The amount has changed. Check what is available.",
+  "Обсяг{p0}": "Amount{p0}",
+  "Обсяг": "Amount",
+  "Одиниця": "Unit",
+  "Основна навігація": "Main navigation",
+  "Очищення даних сайту видалить локальні ресурси. Імпорт додає копії та зберігає наявні розподіли.": "Clearing site data will delete local resources. Import adds copies and keeps your existing resources.",
+  "Перевіряю файл…": "Checking the file…",
+  "Побач ціле.": "See the whole.",
+  "Повернутися до цілого": "Go to the whole",
+  "Повторити скасовану зміну": "Redo the last undone change",
+  "Потребує уваги": "Needs attention",
+  "Почни з бюджету, часу або простору. Вкажи обсяг і розділи його на частини — Hundred покаже, що залишається.": "Start with a budget, time or space. Set the amount and divide it into parts — Hundred shows what remains.",
+  "Почни з цілого": "Start with the whole",
+  "Продовжити": "Continue",
+  "Редагувати ресурс": "Edit resource",
+  "Редагувати ціле": "Edit the whole",
+  "Редагувати частину": "Edit part",
+  "Резервні копії": "Backups",
+  "Ресурс": "Resource",
+  "Ресурси зберігаються автоматично в цьому браузері. Синхронізації між пристроями поки немає.": "Resources are saved automatically in this browser. Device sync is not available yet.",
+  "Розподілено": "Allocated",
+  "Рівні": "Levels",
+  "Рівні ресурсу": "Resource levels",
+  "Скасувати": "Cancel",
+  "Скасувати останню зміну": "Undo the last change",
+  "Спосіб введення частини": "Part input mode",
+  "Створити копію ресурсу": "Duplicate resource",
+  "Створити перший ресурс": "Create your first resource",
+  "Створити ресурс": "Create resource",
+  "Твій Hundred": "Your Hundred",
+  "Твій простір": "Your space",
+  "Ти тут": "You are here",
+  "У цьому файлі немає збережених розподілів.": "This file contains no saved resources.",
+  "Увесь ресурс": "Whole resource",
+  "Увімкнено": "Enabled",
+  "Усе розподілено. Зменш або видали одну з частин, щоб звільнити місце.": "Everything is allocated. Reduce or delete a part to free up capacity.",
+  "Усе розподілено. Зменш частину, щоб звільнити місце.": "Everything is allocated. Reduce a part to free up capacity.",
+  "Усе, що має межі. Кожному ресурсу — свій розподіл.": "Anything with limits. A separate allocation for every resource.",
+  "Усі ресурси в одному JSON-файлі": "All resources in one JSON file",
+  "Файл завеликий. Вибери копію до 4 МБ.": "The file is too large. Choose a backup up to 4 MB.",
+  "Файл резервної копії": "Backup file",
+  "Ця частка надто мала для точності розподілу. Введи більше значення або скористайся режимом «Значення».": "This share is too small for the supported precision. Enter a larger percentage or use Amount mode.",
+  "Ціле": "Whole",
+  "Ціле створено. Додай першу частину.": "Resource created. Add the first part.",
+  "Частина": "Part",
+  "Частина · рівень {p0}": "Part · level {p0}",
+  "Частини": "Parts",
+  "Частка, %": "Share, %",
+  "Шлях до поточної частини": "Path to the current part",
+  "Що маєш, скільки та в яких одиницях?": "What do you have, how much, and in which units?",
+  "Що розподіляємо?": "What are we allocating?",
+  "від усього «": "of the whole “",
+  "грн": "UAH",
+  "поточної категорії": "the current part",
+  "ресурсів. Звільни місце, перш ніж створювати новий.": "resources are saved. Free up space before creating another.",
+  "ресурсів. Щоб додати новий, видали один із наявних.": "resources are saved. Delete one before adding another.",
+  "розподілено": "allocated",
+  "розподілів.": "resources.",
+  "цього рівня": "of this level",
+  "частин ·": "parts ·",
+  "із": "of",
+  "✓ Збережено в цьому браузері": "✓ Saved in this browser",
+  "Мова": "Language",
+  "Мова інтерфейсу": "Interface language",
+  "Назви твоїх ресурсів і одиниці виміру залишаться такими, як ти їх ввів.": "Your resource names and units stay exactly as you entered them.",
+  "Тема": "Theme",
+  "Вигляд": "Appearance",
+  "Темна": "Dark",
+  "Світла": "Light",
+  "Як у системі": "System",
+  "Системна тема змінюється разом із налаштуваннями пристрою.": "System theme follows your device settings.",
+  "Не вдалося зберегти налаштування. Вони діятимуть до закриття цієї вкладки.": "Could not save preferences. They will apply until this tab is closed.",
+  "Вкажи назву.": "Enter a name.",
+  "Назва має містити не більше 120 символів.": "The name must contain at most 120 characters.",
+  "Вкажи число більше нуля, до 1 мільярда та з не більш ніж 6 знаками після коми.": "Enter a number greater than zero and up to 1 billion, with at most 6 decimal places.",
+  "Вкажи одиницю, наприклад грн або год.": "Enter a unit, for example UAH or hours.",
+  "Одиниця має містити не більше 20 символів.": "The unit must contain at most 20 characters.",
+  "Некоректні дані частини.": "Invalid part data.",
+  "Значення не може бути меншим за суму вкладених частин.": "The amount cannot be smaller than the sum of nested parts.",
+  "Значення перевищує доступний обсяг у батьківській категорії.": "The amount exceeds the available capacity in the parent part.",
+  "Ціле не можна видалити як частину.": "The whole cannot be deleted as a part.",
+  "Збереження завелике.": "Saved data is too large.",
+  "Невідома версія збереження.": "Unknown saved data version.",
+  "Некоректна структура збереження.": "Invalid saved data structure.",
+  "Некоректні дані збереження.": "Invalid saved data.",
+  "Частини перевищують ціле.": "The parts exceed the whole.",
+  "Некоректний шлях.": "Invalid path.",
+  "Файл завеликий. Максимальний розмір — 4 МБ.": "The file is too large. Maximum size is 4 MB.",
+  "Це не коректний JSON-файл резервної копії.": "This is not a valid JSON backup file.",
+  "Непідтримуваний формат копії Hundred або забагато розподілів.": "Unsupported Hundred backup format or too many resources.",
+  "Некоректні дані розподілу.": "Invalid resource data.",
+  "Копія містить порожній розподіл.": "The backup contains an empty resource.",
+  "Копія містить розподіли з однаковими ідентифікаторами.": "The backup contains resources with duplicate IDs.",
+  "Немає розподілу для копіювання.": "There is no resource to duplicate.",
+  "Можна зберегти до {max} розподілів. Видали один із наявних.": "You can save up to {max} resources. Delete an existing one first.",
+  "Файл не містить збережених розподілів.": "The file contains no saved resources.",
+  "Після імпорту буде більше {max} розподілів. Звільни місце та спробуй ще раз.": "Import would exceed {max} resources. Free up space and try again.",
+  "Не вдалося прочитати збереження. Нові зміни поки не зберігатимуться; попередні дані не перезаписані.": "Could not read saved data. New changes will not be saved yet; previous data has not been overwritten.",
+  "Дані оновлено в іншій вкладці. Історію дій очищено.": "Data was updated in another tab. Undo history has been cleared.",
+  "Інша вкладка записала некоректні дані. Автозбереження призупинено; поточні розподіли залишилися.": "Another tab saved invalid data. Autosave is paused; your current resources remain.",
+  "Дані ще відновлюються.": "Your data is still being restored.",
+  "Не вдалося виконати дію.": "Could not complete the action.",
+  "Не вдалося зберегти дані на цьому пристрої. Залиш цю вкладку відкритою та завантаж резервну копію.": "Could not save data on this device. Keep this tab open and download a backup.",
+  "Копія — {name}": "Copy — {name}",
+  "Копію створено. Її можна змінювати незалежно від оригіналу.": "Copy created. You can edit it independently of the original.",
+  "Не вдалося створити копію.": "Could not create a copy.",
+  "Імпортовано розподілів: {count}. Попередні розподіли залишилися.": "Imported {count} resources. Your existing resources remain.",
+  "Не вдалося імпортувати копію.": "Could not import the backup.",
+  "Розподіл видалено. Дію можна скасувати.": "Resource deleted. You can undo this.",
+  "Останню дію скасовано.": "Last action undone.",
+  "Дію повторено.": "Action redone.",
+  "Hundred — побач свої ресурси": "Hundred — see your resources"
+};
+
+export function translate(language: Language, key: string, params: TranslationParams = {}): string {
+  const template = language === "en" ? english[key] ?? key : key;
+  return template.replace(/\{(\w+)\}/g, (match, name: string) => params[name] === undefined ? match : String(params[name]));
+}
+
+function pattern(template: string) {
+  const names: string[] = [];
+  const pieces = template.split(/(\{\w+\})/g).map((piece) => {
+    if (/^\{\w+\}$/.test(piece)) { names.push(piece.slice(1, -1)); return "(.*?)"; }
+    return piece.replace(/[.*+?^${\}()|[\]\\]/g, "\\$&");
+  });
+  return { regex: new RegExp("^" + pieces.join("") + "$", "s"), names };
+}
+const messages = Object.entries(english).flatMap(([key, value]) => [
+  { key, ...pattern(key) }, { key, ...pattern(value) },
+]);
+
+export function translateMessage(language: Language, message: string | null | undefined): string {
+  if (!message) return "";
+  for (const { key, regex, names } of messages) {
+    const match = regex.exec(message);
+    if (match) return translate(language, key, Object.fromEntries(names.map((name, index) => [name, match[index + 1]])));
+  }
+  return message;
+}
+
+export function formatNumber(value: number, language: Language = "uk") {
+  return new Intl.NumberFormat(language === "uk" ? "uk-UA" : "en-US", { maximumFractionDigits: 6 }).format(value);
+}
+export function formatPercent(value: number, language: Language = "uk") {
+  return new Intl.NumberFormat(language === "uk" ? "uk-UA" : "en-US", { maximumFractionDigits: 1 }).format(value) + "%";
+}
+
+export type Preferences = { language: Language; theme: Theme };
+export const PREFERENCES_KEY = "hundred.preferences.v1";
+export const defaultPreferences: Preferences = { language: "uk", theme: "dark" };
+export function decodePreferences(raw: string | null): Preferences {
+  if (!raw) return defaultPreferences;
+  try {
+    const data = JSON.parse(raw);
+    return {
+      language: data.language === "en" ? "en" : "uk",
+      theme: data.theme === "light" || data.theme === "system" ? data.theme : "dark",
+    };
+  } catch { return defaultPreferences; }
+}
+
