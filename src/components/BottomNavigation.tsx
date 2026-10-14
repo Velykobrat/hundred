@@ -2,7 +2,8 @@
 import { usePreferences } from "../lib/use-preferences";
 import Icon from "./Icon";
 
-export type Screen = "home" | "resource" | "settings";
+export type { Screen } from "../lib/use-screen";
+import type { Screen } from "../lib/use-screen";
 const destinations = [
   { screen: "home", label: "Головна", icon: "home" },
   { screen: "resource", label: "Ресурс", icon: "resource" },

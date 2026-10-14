@@ -2,6 +2,7 @@
 import { usePreferences } from "../lib/use-preferences";
 import { MAX_DOCUMENTS } from "../lib/collection";
 import Icon from "./Icon";
+import BeginnerGuide from "./BeginnerGuide";
 
 type Props = { count: number; storageError: string | null; canExport: boolean; onExport: () => void; onImport: () => void };
 
@@ -40,6 +41,7 @@ export default function SettingsPanel({ count, storageError, canExport, onExport
         <button type="button" onClick={onImport}><Icon name="upload" /><span><span>{t("Імпортувати файл")}</span><span>{t("Додати ресурси з резервної копії")}</span></span><Icon name="chevron" width="16" height="16" /></button>
       </div>
     </section>
+    <BeginnerGuide />
     <p className="settings-footnote">{t("Очищення даних сайту видалить локальні ресурси. Імпорт додає копії та зберігає наявні розподіли.")}</p>
   </section>;
 }

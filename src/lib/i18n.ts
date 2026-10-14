@@ -2,6 +2,23 @@ export type Language = "uk" | "en";
 export type Theme = "dark" | "light" | "system";
 export type TranslationParams = Record<string, string | number>;
 export const english: Record<string, string> = {
+  "Твої збережені розподіли. Обери ресурс або створи новий.": "Your saved allocations. Open a resource or create a new one.",
+  "Як користуватися Hundred": "How to use Hundred",
+  "Коротка інструкція": "Quick guide",
+  "Hundred допомагає розподіляти обмежені ресурси — гроші, час чи простір — та бачити вільний залишок.": "Hundred helps you allocate limited resources — money, time or space — and see what remains available.",
+  "Створи ціле": "Create the whole",
+  "На Головній натисни «Новий ресурс». Вкажи назву, загальний обсяг і одиницю: наприклад, бюджет 30 000 грн або 40 годин на тиждень.": "On Home, tap New resource. Enter a name, total amount and unit: for example, a budget of 30,000 UAH or 40 hours a week.",
+  "Додай частини": "Add parts",
+  "Натисни «Додати частину» й введи обсяг або відсоток. Сума частин не може перевищувати ціле; нерозподілений обсяг показано як «Вільно».": "Tap Add part and enter an amount or percentage. Parts cannot exceed the whole; unallocated capacity is shown as Available.",
+  "Розподіляй глибше": "Allocate further",
+  "Натисни частину на карті або у списку. Вона стане цілим — 100% нового рівня, де можна додати вкладені частини.": "Tap a part on the map or in the list. It becomes the whole — 100% of a new level where you can add nested parts.",
+  "Переміщуйся між рівнями": "Move between levels",
+  "Кнопка «На рівень вище» повертає до батьківської частини. У «Рівнях» можна перейти до цілого, іншого предка або сусідньої частини.": "Go up one level returns to the parent part. Levels lets you jump to the whole, another ancestor or a sibling part.",
+  "Керуй змінами": "Manage changes",
+  "Меню «⋯» відкриває редагування та видалення. Стрілки у верхній панелі вкладки «Ресурс» скасовують і повторюють зміни.": "The ⋯ menu provides edit and delete actions. The arrows at the top of Resource undo and redo changes.",
+  "Збережи резервну копію": "Save a backup",
+  "У Налаштуваннях завантаж копію для перенесення на інший пристрій. Імпорт додає ресурси до наявних.": "Download a backup in Settings to transfer your data to another device. Import adds resources to your existing ones.",
+  "Кількість рівнів на картці — найбільша глибина ресурсу. Саме ціле є першим рівнем.": "Levels on a card show the deepest path in the resource. The whole itself is level one.",
   " · частин: {p0}": " · parts: {p0}",
   " Доступно до {p0} {p1}.": " Up to {p0} {p1} available.",
   " Також буде видалено вкладені частини: {p0}.": " Nested parts will also be deleted: {p0}.",
