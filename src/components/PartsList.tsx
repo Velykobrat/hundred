@@ -19,7 +19,7 @@ export default function PartsList({ node, free, atLimit, onOpen, onActions }: { 
           <span className="part-color" style={{ backgroundColor: getNodeColor(child.id) }} aria-hidden="true" />
           <span className="part-copy">
             <span className="part-name">{child.name}</span>
-            <span className="part-value">{<NodeMetadata node={child} />}{child.children.length ? t(" · частин: {p0}", {p0: child.children.length}) : ""}</span>
+            <span className="part-value">{<NodeMetadata node={child} />}{isMeasuredNode(child) && child.children.length ? t(" · частин: {p0}", {p0: child.children.length}) : ""}</span>
           </span>
           {isMeasuredNode(node) && isMeasuredNode(child) && <span className="part-percent">{formatPercent(child.value / node.value * 100)}</span>}
           <Icon name="chevron" className="part-chevron" width="15" height="15" />

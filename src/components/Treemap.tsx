@@ -12,7 +12,7 @@ export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: N
   const { t, formatNumber, formatPercent } = usePreferences();
   if (!isMeasuredNode(node)) return <section aria-label={t("Структура частин")} className="structural-grid">
     {node.children.length ? node.children.map(child => <button type="button" key={child.id} className="surface structural-card" onClick={() => onOpen(child)}>
-      <strong>{child.name}</strong><span><NodeMetadata node={child} /></span>
+      <strong>{child.name}</strong>{isMeasuredNode(child) && <span><NodeMetadata node={child} /></span>}
     </button>) : <p className="surface p-6">{t("Додай першу частину структури.")}</p>}
   </section>;
   const totalValue = node.value;

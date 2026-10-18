@@ -35,7 +35,7 @@ export default function ResourceLibrary({ collection, onOpen, onCreate, onImport
             <span className="resource-card-name">{root.name}</span>
             <span className="resource-card-value"><NodeMetadata node={root} /></span>
             {isMeasuredNode(root) && <span className="usage-track" aria-hidden="true"><span style={{ width: `${usedPercent}%` }} /></span>}
-            <span className="resource-card-footer"><span className="resource-card-stats"><span>{root.children.length} {t("частин ·")} {isMeasuredNode(root) && <>{formatPercent(usedPercent)} {t("розподілено")}</>}</span><span>{levels} {levelLabel(levels, language)}</span></span><span>{pathIds.length > 1 ? t("Продовжити") : t("Відкрити")}</span></span>
+            <span className="resource-card-footer">{isMeasuredNode(root) ? <span className="resource-card-stats"><span>{root.children.length} {t("частин ·")} {formatPercent(usedPercent)} {t("розподілено")}</span><span>{levels} {levelLabel(levels, language)}</span></span> : <span aria-hidden="true" />}<span>{pathIds.length > 1 ? t("Продовжити") : t("Відкрити")}</span></span>
           </button>;
         })}
       </div>

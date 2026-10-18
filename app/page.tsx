@@ -154,7 +154,7 @@ function Workspace() {
         ) : <p role="alert">{t("Не вдалося відкрити частину.")}{" "}<button type="button" onClick={() => goToPath([root.id])} className="underline">{t("Повернутися до цілого")}</button></p>)}
 
         {actionNode && root && <Modal title={actionNode.name} onClose={() => setActionsId(null)} variant="sheet">
-          <p className="mb-5 text-sm text-neutral-400"><NodeMetadata node={actionNode} />{actionNode.children.length ? t(" · частин: {p0}", {p0: actionNode.children.length}) : ""}</p>
+          <p className="mb-5 text-sm text-neutral-400"><NodeMetadata node={actionNode} />{isMeasuredNode(actionNode) && actionNode.children.length ? t(" · частин: {p0}", {p0: actionNode.children.length}) : ""}</p>
           <div className="action-sheet-list">
             {actionNode.id !== current?.id && <button type="button" onClick={() => {
               const actionParent = findParent(root, actionNode.id);
