@@ -6,7 +6,7 @@ export type { Screen } from "../lib/use-screen";
 import type { Screen } from "../lib/use-screen";
 const destinations = [
   { screen: "home", label: "Головна", icon: "home" },
-  { screen: "resource", label: "Ресурс", icon: "resource" },
+  { screen: "resource", label: "Ціле", icon: "resource" },
   { screen: "settings", label: "Налаштування", icon: "settings" },
 ] as const;
 

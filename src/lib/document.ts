@@ -1,3 +1,4 @@
+import { isMeasuredNode } from "./node-mode";
 import type { Node } from "../types/node";
 import { findNodeById, updateNodeById } from "./tree";
 
@@ -9,8 +10,8 @@ export type FieldErrors = { name?: string; value?: string; unit?: string };
 export const emptyDocument: Document = { root: null, pathIds: [] };
 
 export function units(value: number) { return Math.round(value * SCALE); }
-export function sumValues(nodes: Node[]) { return nodes.reduce((sum, node) => sum + units(node.value), 0) / SCALE; }
-export function remaining(node: Node) { return Math.max(0, units(node.value) - units(sumValues(node.children))) / SCALE; }
+export function sumValues(nodes: Node[]) { return nodes.reduce((sum, node) => sum + units(isMeasuredNode(node) ? node.value : 0), 0) / SCALE; }
+export function remaining(node: Node) { return isMeasuredNode(node) ? Math.max(0, units(node.value) - units(sumValues(node.children))) / SCALE : 0; }
 
 export function parseValue(input: string): number | null {
   const normalized = input.trim().replace(/\s/g, "").replace(",", ".");
@@ -42,18 +43,21 @@ export function normalizeDocument(document: Document): Document {
   return { root: document.root, pathIds: path };
 }
 
-export function editPart(root: Node, id: string, name: string, value: number): Node {
+export function editPart(root: Node, id: string, name: string, value?: number): Node {
   const node = findNodeById(root, id);
-  if (!node || !name.trim() || name.trim().length > 120 || parseValue(String(value)) === null) throw new Error("Некоректні дані частини.");
+  if (!node || !name.trim() || name.trim().length > 120 || (isMeasuredNode(node) && (value === undefined || parseValue(String(value)) === null))) throw new Error("Некоректні дані частини.");
+  if (!isMeasuredNode(node)) return updateNodeById(root, id, previous => ({ ...previous, name: name.trim() }));
+  if (value === undefined) throw new Error("Некоректні дані частини.");
+  const measuredValue = value;
   if (units(value) < units(sumValues(node.children))) throw new Error("Значення не може бути меншим за суму вкладених частин.");
   function checkParent(parent: Node): void {
     if (parent.children.some((child) => child.id === id)) {
       const siblings = parent.children.filter((child) => child.id !== id);
-      if (units(value) > units(parent.value) - units(sumValues(siblings))) throw new Error("Значення перевищує доступний обсяг у батьківській категорії.");
+      if (isMeasuredNode(parent) && units(measuredValue) > units(parent.value) - units(sumValues(siblings))) throw new Error("Значення перевищує доступний обсяг у батьківській категорії.");
     } else parent.children.forEach(checkParent);
   }
   if (root.id !== id) checkParent(root);
-  return updateNodeById(root, id, (previous) => ({ ...previous, name: name.trim(), value }));
+  return updateNodeById(root, id, (previous) => ({ ...previous, name: name.trim(), value: measuredValue }));
 }
 
 export function deletePart(root: Node, id: string): Node {
@@ -67,26 +71,29 @@ export function deletePart(root: Node, id: string): Node {
 export function decodeDocument(raw: string): Document {
   if (raw.length > 2_000_000) throw new Error("Збереження завелике.");
   const data = JSON.parse(raw);
-  if (!data || data.version !== 1 || !Array.isArray(data.pathIds)) throw new Error("Невідома версія збереження.");
+  if (!data || ![1, 3].includes(data.version) || !Array.isArray(data.pathIds)) throw new Error("Невідома версія збереження.");
   const ids = new Set<string>();
   let count = 0;
   function read(value: unknown, depth: number, expectedUnit?: string): Node {
     if (!value || typeof value !== "object" || depth > 40 || ++count > 5000) throw new Error("Некоректна структура збереження.");
-    const node = value as Node;
+    const node = value as Record<string, unknown>;
+    const mode = data.version === 1 ? "measured" : node.mode;
     if (typeof node.id !== "string" || !node.id || node.id.length > 100 || ids.has(node.id) ||
         typeof node.name !== "string" || !node.name.trim() || node.name.length > 120 ||
-        typeof node.unit !== "string" || !node.unit.trim() || node.unit.length > 20 ||
-        (expectedUnit !== undefined && node.unit !== expectedUnit) ||
-        typeof node.value !== "number" || !Number.isFinite(node.value) || node.value <= 0 || node.value > MAX_VALUE ||
-        Math.abs(node.value - units(node.value) / SCALE) > 1e-10 || !Array.isArray(node.children)) throw new Error("Некоректні дані збереження.");
+        !Array.isArray(node.children)) throw new Error("Некоректні дані збереження.");
     ids.add(node.id);
-    const children = node.children.map((child) => read(child, depth + 1, node.unit));
-    let total = 0;
-    for (const child of children) {
-      total += units(child.value);
-      if (total > units(node.value)) throw new Error("Частини перевищують ціле.");
+    if (mode === "structural") {
+      if (expectedUnit !== undefined || typeof node.weight !== "number" || !Number.isFinite(node.weight) || node.weight <= 0)
+        throw new Error("Некоректні дані збереження.");
+      return { id: node.id, name: node.name, mode, weight: node.weight, children: node.children.map(child => read(child, depth + 1)) };
     }
-    return { id: node.id, name: node.name, value: units(node.value) / SCALE, unit: node.unit, children };
+    if (mode !== "measured" || typeof node.unit !== "string" || !node.unit.trim() || node.unit.length > 20 ||
+        (expectedUnit !== undefined && node.unit !== expectedUnit) ||
+        typeof node.value !== "number" || parseValue(String(node.value)) === null ||
+        Math.abs(node.value - units(node.value) / SCALE) > 1e-10) throw new Error("Некоректні дані збереження.");
+    const children = node.children.map(child => read(child, depth + 1, node.unit as string));
+    if (units(sumValues(children)) > units(node.value)) throw new Error("Частини перевищують ціле.");
+    return { id: node.id, name: node.name, mode, value: units(node.value) / SCALE, unit: node.unit, children };
   }
   const root = data.root === null ? null : read(data.root, 0);
   if (data.pathIds.length > 41 || data.pathIds.some((id: unknown) => typeof id !== "string")) throw new Error("Некоректний шлях.");
@@ -94,5 +101,23 @@ export function decodeDocument(raw: string): Document {
 }
 
 export function encodeDocument(document: Document): string {
-  return JSON.stringify({ version: 1, ...normalizeDocument(document) });
+  return JSON.stringify({ version: 3, ...normalizeDocument(document) });
+}
+
+// Creation keeps optional input at the boundary; persisted nodes always have an explicit mode.
+export function createNode(id: string, name: string, value?: number, unit = ""): Node {
+  const errors = validateFields(name, value === undefined ? "1" : String(value), value === undefined ? undefined : unit);
+  if (Object.keys(errors).length) throw new Error(Object.values(errors)[0]);
+  return value === undefined
+    ? { id, name: name.trim(), mode: "structural", weight: 1, children: [] }
+    : { id, name: name.trim(), mode: "measured", value, unit: unit.trim(), children: [] };
+}
+export function addPart(root: Node, parentId: string, child: Node): Node {
+  const parent = findNodeById(root, parentId);
+  if (!parent) throw new Error("Некоректні дані частини.");
+  if (isMeasuredNode(parent) && (!isMeasuredNode(child) || child.unit !== parent.unit || units(child.value) > units(remaining(parent))))
+    throw new Error("Частини перевищують ціле.");
+  const next = updateNodeById(root, parentId, node => ({ ...node, children: [...node.children, child] }));
+  // Reuse the strict reader for duplicate IDs, capacity, precision, and technical limits.
+  return decodeDocument(encodeDocument({ root: next, pathIds: [next.id] })).root!;
 }

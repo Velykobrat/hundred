@@ -10,22 +10,22 @@ export function activeDocument(collection: Collection): Document {
   return collection.documents.find((document) => document.root?.id === collection.activeId) ?? emptyDocument;
 }
 export function encodeCollection(collection: Collection): string {
-  return JSON.stringify({ version: 2, ...collection });
+  return JSON.stringify({ version: 3, ...collection });
 }
 export function decodeCollection(raw: string): Collection {
   if (raw.length > MAX_FILE_SIZE) throw new Error("Файл завеликий. Максимальний розмір — 4 МБ.");
   let data;
   try { data = JSON.parse(raw); } catch { throw new Error("Це не коректний JSON-файл резервної копії."); }
-  if (data?.version === 1) {
+  if (data?.version === 1 || (data?.version === 3 && "root" in data)) {
     const document = decodeDocument(raw);
     return document.root ? { documents: [document], activeId: document.root.id } : emptyCollection;
   }
-  if (!data || data.version !== 2 || !Array.isArray(data.documents) || data.documents.length > MAX_DOCUMENTS ||
+  if (!data || ![2, 3].includes(data.version) || !Array.isArray(data.documents) || data.documents.length > MAX_DOCUMENTS ||
       (data.activeId !== null && typeof data.activeId !== "string")) throw new Error("Непідтримуваний формат копії Hundred або забагато розподілів.");
   const documents: Document[] = data.documents.map((document: unknown) => {
     if (!document || typeof document !== "object") throw new Error("Некоректні дані розподілу.");
     const candidate = document as Document;
-    const restored = decodeDocument(JSON.stringify({ version: 1, root: candidate.root, pathIds: candidate.pathIds }));
+    const restored = decodeDocument(JSON.stringify({ version: data.version === 2 ? 1 : 3, root: candidate.root, pathIds: candidate.pathIds }));
     if (!restored.root) throw new Error("Копія містить порожній розподіл.");
     return restored;
   });

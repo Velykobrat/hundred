@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hundred — побач свої ресурси",
-  description: "Hundred — універсальна система роботи з обмеженими величинами. Побач бюджет, час, площу та інші ресурси як ціле, його частини й доступний залишок.",
+  title: "Hundred — побач свої цілі",
+  description: "Hundred — створи ціле з кількістю або без неї, поділи його на частини та відкрий кожну частину як нове ціле.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

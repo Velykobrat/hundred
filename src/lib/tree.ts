@@ -35,3 +35,17 @@ export function updateNodeById(
     ),
   };
 }
+export function countDescendants(node: Node): number {
+  return node.children.reduce((count, child) => count + 1 + countDescendants(child), 0);
+}
+export function countLevels(node: Node): number {
+  return 1 + node.children.reduce((depth, child) => Math.max(depth, countLevels(child)), 0);
+}
+export function findParent(root: Node, id: string): Node | null {
+  if (root.children.some(child => child.id === id)) return root;
+  for (const child of root.children) {
+    const parent = findParent(child, id);
+    if (parent) return parent;
+  }
+  return null;
+}

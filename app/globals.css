@@ -252,3 +252,7 @@ svg { flex-shrink: 0; }
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
 
+
+.structural-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; }
+.structural-card { min-height: 140px; padding: 20px; text-align: left; display: flex; flex-direction: column; gap: 12px; overflow-wrap: anywhere; }
+.structural-card span { color: var(--muted); font-size: 13px; }

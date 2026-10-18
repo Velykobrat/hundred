@@ -1,4 +1,5 @@
 "use client";
+import NodeMetadata from "./NodeMetadata";
 
 import { usePreferences } from "../lib/use-preferences";
 import { useRef, useState, type ChangeEvent } from "react";
@@ -6,7 +7,7 @@ import { decodeCollection, MAX_DOCUMENTS, MAX_FILE_SIZE, type Collection } from 
 import Modal from "./Modal";
 
 export default function ImportBackup({ currentCount, onImport, onClose }: { currentCount: number; onImport: (collection: Collection) => string | void; onClose: () => void }) {
-  const { t, formatNumber, translateMessage } = usePreferences();
+  const { t, translateMessage } = usePreferences();
   const [incoming, setIncoming] = useState<Collection | null>(null);
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState("");
@@ -43,7 +44,7 @@ export default function ImportBackup({ currentCount, onImport, onClose }: { curr
       <h3 className="break-words text-sm font-medium">{fileName}</h3>
       <p className="mt-1 text-xs text-neutral-400">{t("Буде додано розподілів:")}{" "}{incoming.documents.length}</p>
       <ul className="mt-3 max-h-48 space-y-2 overflow-y-auto">
-        {incoming.documents.map(({ root }) => <li key={root!.id} className="text-sm"><span className="break-words">{root!.name}</span><span className="mt-1 block text-xs text-neutral-400">{formatNumber(root!.value)} {root!.unit}</span></li>)}
+        {incoming.documents.map(({ root }) => <li key={root!.id} className="text-sm"><span className="break-words">{root!.name}</span><span className="mt-1 block text-xs text-neutral-400"><NodeMetadata node={root!} /></span></li>)}
       </ul>
     </section>}
     <div className="mt-6 flex flex-wrap justify-end gap-3">

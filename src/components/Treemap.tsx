@@ -1,3 +1,5 @@
+import { isMeasuredNode } from "../lib/node-mode";
+import NodeMetadata from "./NodeMetadata";
 
 import { usePreferences } from "../lib/use-preferences";
 
@@ -8,13 +10,18 @@ import { getNodeColor } from "../lib/format";
 
 export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: Node) => void }) {
   const { t, formatNumber, formatPercent } = usePreferences();
+  if (!isMeasuredNode(node)) return <section aria-label={t("Структура частин")} className="structural-grid">
+    {node.children.length ? node.children.map(child => <button type="button" key={child.id} className="surface structural-card" onClick={() => onOpen(child)}>
+      <strong>{child.name}</strong><span><NodeMetadata node={child} /></span>
+    </button>) : <p className="surface p-6">{t("Додай першу частину структури.")}</p>}
+  </section>;
   const totalValue = node.value;
   const free = remaining(node);
   const items: LayoutItem[] = node.children.map((child) => ({ node: child, x: 0, y: 0, width: 0, height: 0 }));
-  if (free > 0) items.push({ node: { id: "__remaining__", name: t("Вільно"), value: free, unit: node.unit, children: [] }, x: 0, y: 0, width: 0, height: 0, isRemaining: true });
+  if (free > 0) items.push({ node: { mode: "measured", id: "__remaining__", name: t("Вільно"), value: free, unit: node.unit, children: [] }, x: 0, y: 0, width: 0, height: 0, isRemaining: true });
   const layout = createTreemap(items);
   return (
-          <section aria-label={t("Карта частин ресурсу")} className="resource-map relative aspect-square w-full overflow-hidden rounded-[24px] border border-white/10 bg-neutral-900">
+          <section aria-label={t("Карта частин цілого")} className="resource-map relative aspect-square w-full overflow-hidden rounded-[24px] border border-white/10 bg-neutral-900">
             {layout.map(
               ({
                 node,
@@ -24,6 +31,7 @@ export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: N
                 height,
                 isRemaining,
               }) => {
+                if (!isMeasuredNode(node)) return null;
                 const percent = (node.value / totalValue) * 100;
 
                 const area = width * height;

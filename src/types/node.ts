@@ -1,10 +1,11 @@
-export type Node = {
+type BaseNode = {
   id: string;
   name: string;
-  value: number;
-  unit: string;
   children: Node[];
 };
+export type MeasuredNode = BaseNode & { mode: "measured"; value: number; unit: string };
+export type StructuralNode = BaseNode & { mode: "structural"; weight: number };
+export type Node = MeasuredNode | StructuralNode;
 
 export type LayoutItem = {
   node: Node;

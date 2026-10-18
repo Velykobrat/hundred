@@ -36,7 +36,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!state.ready) return;
     document.documentElement.lang = state.language;
-    document.title = translate(state.language, "Hundred — побач свої ресурси");
+    document.title = translate(state.language, "Hundred — побач свої цілі");
     const media = state.theme === "system" && typeof window.matchMedia === "function" ? window.matchMedia("(prefers-color-scheme: dark)") : null;
     const apply = () => { document.documentElement.dataset.theme = state.theme === "system" ? media?.matches === false ? "light" : "dark" : state.theme; };
     apply();

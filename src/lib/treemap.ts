@@ -1,8 +1,9 @@
+import { layoutWeight } from "./node-mode";
 import type { LayoutItem } from "../types/node";
 
 function splitNearHalf(items: LayoutItem[]) {
   const total = items.reduce(
-    (sum, item) => sum + item.node.value,
+    (sum, item) => sum + layoutWeight(item.node),
     0
   );
 
@@ -11,7 +12,7 @@ function splitNearHalf(items: LayoutItem[]) {
   let bestDifference = Infinity;
 
   for (let i = 1; i < items.length; i++) {
-    running += items[i - 1].node.value;
+    running += layoutWeight(items[i - 1].node);
 
     const difference = Math.abs(total / 2 - running);
 
@@ -53,12 +54,12 @@ export function createTreemap(
   const [groupA, groupB] = splitNearHalf(items);
 
   const totalA = groupA.reduce(
-    (sum, item) => sum + item.node.value,
+    (sum, item) => sum + layoutWeight(item.node),
     0
   );
 
   const totalB = groupB.reduce(
-    (sum, item) => sum + item.node.value,
+    (sum, item) => sum + layoutWeight(item.node),
     0
   );
 
