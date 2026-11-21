@@ -260,3 +260,4 @@ check('v3 validation rejects invalid modes, weights, measured structure, IDs and
 });
 console.log(tested + ' core scenarios passed');
 await import('./pwa.mjs');
+await import('./pwa-build-output.mjs');

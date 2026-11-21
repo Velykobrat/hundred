@@ -8,7 +8,7 @@ There is no backend or synchronization service.
 
 Use `npm run build`, then `npm run start`, or the existing Vercel build pipeline.
 The build runs `scripts/build-pwa.mjs` after Next.js finishes. It reads the
-prerendered `/` HTML, all emitted JS/CSS/font files under `.next/static`, the
+prerendered `/` HTML (including Next's deployment-adapter route-cache layout), all emitted JS/CSS/font files under `.next/static`, the
 manifest and the two install icons. It hashes their contents together with the
 worker template and writes **generated, git-ignored** `public/sw.js`.
 Do not invoke `next build` directly for a release: that skips worker generation.
@@ -119,3 +119,31 @@ need the manual steps above; the mock tests do not replace browser QA.
 With the production server running on port 3100, `node tests/pwa.mjs --production`
 also verifies the served worker's MIME/no-store headers, generated shell, manifest
 link and successful delivery of every asset in the real build's precache list.
+
+### Android dimmed-interface investigation
+
+The application does not apply offline opacity, filters, pointer-event changes,
+disabled controls or overlays. `navigator.onLine` only gates update checks.
+The update notice is an ordinary paragraph; its `save-status` style adds margin.
+The only full-page dimming mechanism is the native backdrop of an intentionally
+opened modal dialog. Dialogs are not restored from localStorage and are closed on
+unmount. Disabled-button opacity applies to individual buttons with existing
+business/UI constraints, not the page or navigation.
+
+A production browser check confirmed modal cleanup while online. With the local
+server stopped it reloaded the cached app, restored a test whole, opened the add
+dialog and saved a part.
+The inspected html/body/main/bottom-navigation roots had opacity 1, filter none,
+and pointer-events auto, with no open dialogs, `:modal` or inert elements left over.
+This checks origin unavailability, not Android airplane mode or browser-native UI.
+The reported Android dimming was not reproduced; no visual workaround was applied.
+
+To diagnose that specific device, compare screenshots before/after disconnecting
+and record browser name/version and whether buttons actually respond. If remote
+inspection is available, check root computed styles and `document.querySelectorAll(
+'dialog[open], :modal, [inert]')`, and whether the navigation is served by the worker.
+Do not clear site data as a diagnostic step without exporting a backup first.
+
+`npm test` includes a worker regression assertion that online and offline root/hash
+navigations return identical shell HTML. It cannot assert Android compositor or
+browser UI behavior; that still requires the affected browser/device.

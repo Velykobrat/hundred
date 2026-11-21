@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "test": "node tests/core.mjs",
     "dev": "next dev",
     "build": "next build && node scripts/build-pwa.mjs",
     "start": "next start",

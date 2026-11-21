@@ -53,9 +53,12 @@ await app.lifecycle('activate');
 assert.equal(app.stores.has('hundred-pwa-old'), false);
 assert.ok(app.stores.has('other-app'), 'only Hundred shell caches may be deleted');
 assert.equal(app.claimed, true);
+const onlineShell = await (await app.fetch('/', 'navigate')).text();
 app.offline();
 for (const path of ['/', '/?source=installed', '/#home', '/#resource', '/#settings']) {
-  assert.equal(await (await app.fetch(path, 'navigate')).text(), build.shell);
+  const offlineShell = await (await app.fetch(path, 'navigate')).text();
+  assert.equal(offlineShell, build.shell);
+  assert.equal(offlineShell, onlineShell, 'offline reload must serve the identical app shell, without a disabled/overlay variant');
 }
 for (const path of build.assets) assert.equal(await (await app.fetch(path)).text(), 'asset');
 assert.equal(await (await app.fetch('/manifest.webmanifest')).text(), build.manifest);

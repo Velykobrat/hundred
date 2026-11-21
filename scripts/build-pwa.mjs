@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
+import { readAppShell } from './pwa-build-output.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const staticDir = join(root, '.next/static');
@@ -12,7 +13,7 @@ async function filesIn(directory) {
 
 // Cache every emitted runtime chunk, including lazy chunks, and self-hosted next/font files.
 // Fail the build if Next's prerendered root output changes rather than ship an incomplete shell.
-const shell = await readFile(join(root, '.next/server/app/index.html'), 'utf8');
+const shell = await readAppShell(root);
 const manifest = await readFile(join(root, 'app/manifest.webmanifest'), 'utf8');
 const template = await readFile(join(root, 'src/pwa/worker.js'), 'utf8');
 const staticFiles = (await filesIn(staticDir)).filter(file => /\.(?:js|css|woff2?|ttf|otf)$/.test(file)).sort();
