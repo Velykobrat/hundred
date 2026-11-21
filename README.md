@@ -73,3 +73,15 @@ Core tests cover measured precision/capacity, structural and mixed trees, v1/v2 
 - `tests/core.mjs`: core regression scenarios.
 
 Vercel runs tests, lint and production build before deployment using `vercel.json`.
+
+## Offline / PWA
+
+Production builds include an offline app shell and a Web App Manifest. After one
+completed online service-worker installation, Home, Whole, Settings and local
+editing/backup workflows can run offline. Install using the browser's menu where
+supported. Local data still uses the existing v3 localStorage format.
+
+Updates download in the background and wait until all Hundred tabs/windows close;
+a small notice explains when an update is ready. Development mode does not register
+the worker. See [PWA implementation and manual QA](docs/pwa.md) for cache policy,
+installation requirements, limitations and the complete online/offline/update test.

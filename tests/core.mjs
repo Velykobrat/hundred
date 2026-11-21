@@ -259,3 +259,4 @@ check('v3 validation rejects invalid modes, weights, measured structure, IDs and
   assert.throws(() => decodeDocument(wrap(deep)));
 });
 console.log(tested + ' core scenarios passed');
+await import('./pwa.mjs');

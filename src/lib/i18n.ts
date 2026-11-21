@@ -2,6 +2,7 @@ export type Language = "uk" | "en";
 export type Theme = "dark" | "light" | "system";
 export type TranslationParams = Record<string, string | number>;
 export const english: Record<string, string> = {
+  "Доступне оновлення. Закрий усі вкладки й вікна Hundred та відкрий знову, щоб застосувати його.": "An update is ready. Close all Hundred tabs and windows, then reopen to apply it.",
   "Твої збережені цілі. Обери ціле або створи нове.": "Your saved wholes. Open a whole or create a new one.",
   "Як користуватися Hundred": "How to use Hundred",
   "Коротка інструкція": "Quick guide",

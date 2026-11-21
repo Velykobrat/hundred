@@ -4,6 +4,7 @@ import { PreferencesProvider, usePreferences } from "../src/lib/use-preferences"
 
 import { useMemo, useState } from "react";
 import NodeMetadata from "../src/components/NodeMetadata";
+import PwaRegistration from "../src/components/PwaRegistration";
 import { isMeasuredNode } from "../src/lib/node-mode";
 import type { Node } from "../src/types/node";
 import { findNodeById, countDescendants as countParts, findParent } from "../src/lib/tree";
@@ -94,6 +95,7 @@ function Workspace() {
   return (
     <main className="hundred-app min-h-screen px-4 py-5 text-white sm:px-8 sm:py-8">
       <div className="mx-auto max-w-7xl">
+        <PwaRegistration />
         <header className="app-header">
           <button type="button" onClick={() => goToScreen("home")} className="brand" aria-label={t("Hundred — на головну")}>Hundred<span className="brand-dot" aria-hidden="true" /></button>
           {screen === "resource" ? <div className="history-controls">

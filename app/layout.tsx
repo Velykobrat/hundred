@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { preferenceScript } from "../src/lib/preference-script";
 import "./globals.css";
@@ -14,9 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  icons: { apple: "/pwa-192.png" },
   title: "Hundred — побач свої цілі",
   description: "Hundred — створи ціле з кількістю або без неї, поділи його на частини та відкрий кожну частину як нове ціле.",
 };
+
+export const viewport: Viewport = { themeColor: "#111317" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 tests/.cache/
+
+# Generated per production build; never serve an old build's worker from source control.
+/public/sw.js
