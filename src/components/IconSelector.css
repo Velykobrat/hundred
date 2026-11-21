@@ -1,0 +1,12 @@
+.node-icon-picker { border: 0; padding: 0; min-width: 0; }
+.node-icon-picker legend { margin-bottom: 12px; font-size: 14px; color: var(--secondary); }
+.node-icon-picker legend span { margin-left: 8px; font-size: 12px; color: var(--muted); }
+.node-icon-picker-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 8px; }
+.node-icon-picker-option { position: relative; display: block; min-width: 48px; height: 48px; cursor: pointer; }
+.node-icon-picker-option input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.node-icon-picker-glyph { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border: 1px solid transparent; border-radius: 13px; color: var(--foreground); background: var(--hover); pointer-events: none; transition: background .15s, color .15s, border-color .15s; }
+.node-icon-picker-option:hover .node-icon-picker-glyph { border-color: var(--border-strong); }
+.node-icon-picker-option input:checked + .node-icon-picker-glyph { color: var(--icon-color); border: 2px solid var(--icon-color); background: color-mix(in srgb, var(--icon-color) 16%, transparent); }
+.node-icon-picker-option input:checked + .node-icon-picker-glyph svg { filter: drop-shadow(0 0 6px var(--icon-color)); }
+.node-icon-picker-option input:focus-visible + .node-icon-picker-glyph { outline: 2px solid var(--foreground); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .node-icon-picker-glyph { transition: none; } }

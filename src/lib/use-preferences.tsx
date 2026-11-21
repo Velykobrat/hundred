@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from "react";
-import { decodePreferences, defaultPreferences, formatNumber, formatPercent, PREFERENCES_KEY, translate, translateMessage, type Language, type Preferences, type Theme, type TranslationParams } from "./i18n";
+import { decodePreferences, defaultPreferences, formatNumber, formatPercent, PREFERENCES_KEY, translate, translateMessage, type Language, type Preferences, type Theme, type StructureView, type TranslationParams } from "./i18n";
 
 type State = Preferences & { ready: boolean; error: boolean };
 type Action = { type: "load"; preferences: Preferences } | { type: "change"; preferences: Preferences; error: boolean };
@@ -11,6 +11,7 @@ function reducer(state: State, action: Action): State {
 type Context = Preferences & {
   setLanguage: (language: Language) => void;
   setTheme: (theme: Theme) => void;
+  setStructureView: (view: StructureView) => void;
   preferenceError: string;
   t: (key: string, params?: TranslationParams) => string;
   translateMessage: (message: string | null | undefined) => string;
@@ -51,16 +52,17 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "change", preferences, error });
     }
     return {
-      language: state.language, theme: state.theme,
-      setLanguage: (language) => change({ language, theme: state.theme }),
-      setTheme: (theme) => change({ language: state.language, theme }),
+      language: state.language, theme: state.theme, structureView: state.structureView,
+      setLanguage: (language) => change({ language, theme: state.theme, structureView: state.structureView }),
+      setTheme: (theme) => change({ language: state.language, theme, structureView: state.structureView }),
+      setStructureView: (structureView) => change({ language: state.language, theme: state.theme, structureView }),
       preferenceError: state.error ? translate(state.language, "Не вдалося зберегти налаштування. Вони діятимуть до закриття цієї вкладки.") : "",
       t: (key, params) => translate(state.language, key, params),
       translateMessage: (message) => translateMessage(state.language, message),
       formatNumber: (value) => formatNumber(value, state.language),
       formatPercent: (value) => formatPercent(value, state.language),
     };
-  }, [state.language, state.theme, state.error]);
+  }, [state.language, state.theme, state.structureView, state.error]);
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
 }
 

@@ -2,6 +2,42 @@ export type Language = "uk" | "en";
 export type Theme = "dark" | "light" | "system";
 export type TranslationParams = Record<string, string | number>;
 export const english: Record<string, string> = {
+  "Картки": "Cards",
+  "Список": "List",
+  "Вигляд структури": "Structure view",
+  "Навчання": "Learning",
+  "Робота": "Work",
+  "Серце": "Heart",
+  "Зірка": "Star",
+  "Енергія": "Energy",
+  "Світ": "World",
+  "Відпочинок": "Rest",
+  "Захист": "Protection",
+  "Час": "Time",
+  "Значок": "Icon",
+  "Стандартний": "Default",
+  "Гроші": "Money",
+  "Люди": "People",
+  "Дім": "Home",
+  "Проєкт": "Project",
+  "Папка": "Folder",
+  "Ціль": "Goal",
+  "Некоректний значок.": "Invalid icon.",
+  "Колір": "Color",
+  "Автоматичний": "Automatic",
+  "Індиго": "Indigo",
+  "Рожевий": "Rose",
+  "Бірюзовий": "Teal",
+  "Золотистий": "Gold",
+  "Фіолетовий": "Purple",
+  "Блакитний": "Cyan",
+  "Оливковий": "Olive",
+  "Помаранчевий": "Orange",
+  "Червоний": "Red",
+  "Синій": "Blue",
+  "Бузковий": "Lilac",
+  "Зелений": "Green",
+  "Некоректний колір.": "Invalid color.",
   "Доступне оновлення. Закрий усі вкладки й вікна Hundred та відкрий знову, щоб застосувати його.": "An update is ready. Close all Hundred tabs and windows, then reopen to apply it.",
   "Твої збережені цілі. Обери ціле або створи нове.": "Your saved wholes. Open a whole or create a new one.",
   "Як користуватися Hundred": "How to use Hundred",
@@ -268,9 +304,10 @@ export function formatPercent(value: number, language: Language = "uk") {
   return new Intl.NumberFormat(language === "uk" ? "uk-UA" : "en-US", { maximumFractionDigits: 1 }).format(value) + "%";
 }
 
-export type Preferences = { language: Language; theme: Theme };
+export type StructureView = "cards" | "list";
+export type Preferences = { language: Language; theme: Theme; structureView: StructureView };
 export const PREFERENCES_KEY = "hundred.preferences.v1";
-export const defaultPreferences: Preferences = { language: "uk", theme: "dark" };
+export const defaultPreferences: Preferences = { language: "uk", theme: "dark", structureView: "cards" };
 export function decodePreferences(raw: string | null): Preferences {
   if (!raw) return defaultPreferences;
   try {
@@ -278,6 +315,7 @@ export function decodePreferences(raw: string | null): Preferences {
     return {
       language: data.language === "en" ? "en" : "uk",
       theme: data.theme === "light" || data.theme === "system" ? data.theme : "dark",
+      structureView: data.structureView === "list" ? "list" : "cards",
     };
   } catch { return defaultPreferences; }
 }

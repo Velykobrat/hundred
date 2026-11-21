@@ -16,7 +16,7 @@ export default function PartsList({ node, free, atLimit, onOpen, onActions }: { 
     {node.children.length ? <ul className="parts-list">
       {node.children.map((child) => <li key={child.id} className="part-row">
         <button type="button" className="part-open" onClick={() => onOpen(child)} aria-label={t("Відкрити «{p0}»", {p0: child.name})}>
-          <span className="part-color" style={{ backgroundColor: getNodeColor(child.id) }} aria-hidden="true" />
+          {child.icon ? <Icon name={child.icon} className="part-node-icon" style={{ color: getNodeColor(child) }} width="18" height="18" /> : <span className="part-color" style={{ backgroundColor: getNodeColor(child) }} aria-hidden="true" />}
           <span className="part-copy">
             <span className="part-name">{child.name}</span>
             <span className="part-value">{<NodeMetadata node={child} />}{isMeasuredNode(child) && child.children.length ? t(" · частин: {p0}", {p0: child.children.length}) : ""}</span>

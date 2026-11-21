@@ -1,6 +1,10 @@
 "use client";
 
 import UnitSelector from "./UnitSelector";
+import ColorSelector from "./ColorSelector";
+import IconSelector from "./IconSelector";
+import type { NodeIcon } from "../lib/node-icon";
+import type { NodeColor } from "../lib/node-color";
 import { usePreferences } from "../lib/use-preferences";
 
 import { useId, useState, type FormEvent } from "react";
@@ -11,14 +15,18 @@ type Props = {
   initialName?: string; initialValue?: number; unit?: string; createWhole?: boolean; optionalQuantity?: boolean; structuralEdit?: boolean;
   available?: number; minimum?: number; submitLabel: string;
   parentValue?: number; parentName?: string;
-  onSubmit: (name: string, value: number | undefined, unit: string) => string | void;
+  initialColor?: NodeColor;
+  initialIcon?: NodeIcon;
+  onSubmit: (name: string, value: number | undefined, unit: string, color?: NodeColor, icon?: NodeIcon) => string | void;
   onCancel?: () => void;
 };
-export default function NodeForm({ initialName = "", initialValue, unit = "", createWhole = false, optionalQuantity = false, structuralEdit = false, available, minimum = 0, submitLabel, onSubmit, onCancel, parentValue, parentName }: Props) {
+export default function NodeForm({ initialName = "", initialValue, initialColor, initialIcon, unit = "", createWhole = false, optionalQuantity = false, structuralEdit = false, available, minimum = 0, submitLabel, onSubmit, onCancel, parentValue, parentName }: Props) {
   const { t, formatNumber, formatPercent, translateMessage, language } = usePreferences();
   const id = useId();
   const optional = createWhole || optionalQuantity;
   const [name, setName] = useState(initialName);
+  const [color, setColor] = useState<NodeColor | undefined>(initialColor);
+  const [icon, setIcon] = useState<NodeIcon | undefined>(initialIcon);
   const [value, setValue] = useState(initialValue === undefined ? "" : String(initialValue).replace(".", language === "uk" ? "," : "."));
   const structural = structuralEdit || (optional && !value.trim());
   const [unitValue, setUnitValue] = useState(unit);
@@ -50,7 +58,7 @@ export default function NodeForm({ initialName = "", initialValue, unit = "", cr
       return;
     }
     try {
-      const error = onSubmit(name.trim(), structural ? undefined : parsed!, unitValue.trim());
+      const error = onSubmit(name.trim(), structural ? undefined : parsed!, unitValue.trim(), color, icon);
       if (error) { setErrors({ name: error }); return; }
     } catch (error) {
       setErrors({ name: error instanceof Error ? error.message : t("Не вдалося виконати дію.") }); return;
@@ -80,6 +88,8 @@ export default function NodeForm({ initialName = "", initialValue, unit = "", cr
         {optional && !structural && <UnitSelector value={unitValue} onChange={setUnitValue} fieldId={id + "-unit"} className={fieldClass} error={translateMessage(errors.unit)} />}
       </div>}
       {(structuralEdit || initialValue !== undefined) && <p className="text-xs text-neutral-400">{t("Тип цілого після створення не змінюється.")}</p>}
+      <ColorSelector value={color} onChange={setColor} />
+      <IconSelector value={icon} color={color} onChange={setIcon} />
 
       {available === 0 && <p className="text-sm text-neutral-300">{t("Усе розподілено. Зменш або видали одну з частин, щоб звільнити місце.")}</p>}
       <div className="flex gap-3 pt-2">

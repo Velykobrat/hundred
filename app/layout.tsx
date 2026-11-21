@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   icons: { apple: "/pwa-192.png" },
   title: "Hundred — побач свої цілі",
-  description: "Hundred — створи ціле з кількістю або без неї, поділи його на частини та відкрий кожну частину як нове ціле.",
+  description: "Hundred — система опису Цілого через Частини, де кожна Частина може стати новим Цілим.",
 };
 
 export const viewport: Viewport = { themeColor: "#111317" };

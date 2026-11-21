@@ -1,3 +1,4 @@
+import { getNodeIcon } from "../lib/node-icon";
 import { isMeasuredNode } from "../lib/node-mode";
 import { countLevels } from "../lib/tree";
 import NodeMetadata from "./NodeMetadata";
@@ -31,10 +32,10 @@ export default function ResourceLibrary({ collection, onOpen, onCreate, onImport
           const usedPercent = isMeasuredNode(root) ? (root.value - remaining(root)) / root.value * 100 : 0;
           const levels = countLevels(root);
           return <button type="button" key={root.id} className="resource-card surface" onClick={() => onOpen(root.id)} aria-label={t("Відкрити ціле «{p0}»", {p0: root.name})}>
-            <span className="resource-card-top"><span className="resource-card-icon" style={{ color: getNodeColor(root.id) }}><Icon name="resource" width="25" height="25" /></span><Icon name="chevron" /></span>
+            <span className="resource-card-top"><span className="resource-card-icon" style={{ color: getNodeColor(root) }}><Icon name={getNodeIcon(root)} width="25" height="25" /></span><Icon name="chevron" /></span>
             <span className="resource-card-name">{root.name}</span>
             <span className="resource-card-value"><NodeMetadata node={root} /></span>
-            {isMeasuredNode(root) && <span className="usage-track" aria-hidden="true"><span style={{ width: `${usedPercent}%` }} /></span>}
+            {isMeasuredNode(root) && <span className="usage-track" aria-hidden="true"><span style={{ width: `${usedPercent}%`, backgroundColor: getNodeColor(root) }} /></span>}
             <span className="resource-card-footer">{isMeasuredNode(root) ? <span className="resource-card-stats"><span>{root.children.length} {t("частин ·")} {formatPercent(usedPercent)} {t("розподілено")}</span><span>{levels} {levelLabel(levels, language)}</span></span> : <span aria-hidden="true" />}<span>{pathIds.length > 1 ? t("Продовжити") : t("Відкрити")}</span></span>
           </button>;
         })}

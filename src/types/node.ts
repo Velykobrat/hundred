@@ -1,6 +1,11 @@
+import type { NodeColor } from "../lib/node-color";
+import type { NodeIcon } from "../lib/node-icon";
+
 type BaseNode = {
   id: string;
   name: string;
+  color?: NodeColor;
+  icon?: NodeIcon;
   children: Node[];
 };
 export type MeasuredNode = BaseNode & { mode: "measured"; value: number; unit: string };

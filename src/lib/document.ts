@@ -1,4 +1,6 @@
 import { isMeasuredNode } from "./node-mode";
+import { isNodeColor, withNodeColor, type NodeColor } from "./node-color";
+import { isNodeIcon, withNodeIcon, type NodeIcon } from "./node-icon";
 import type { Node } from "../types/node";
 import { findNodeById, updateNodeById } from "./tree";
 
@@ -43,10 +45,13 @@ export function normalizeDocument(document: Document): Document {
   return { root: document.root, pathIds: path };
 }
 
-export function editPart(root: Node, id: string, name: string, value?: number): Node {
+export function editPart(root: Node, id: string, name: string, value?: number, color?: NodeColor | null, icon?: NodeIcon | null): Node {
   const node = findNodeById(root, id);
   if (!node || !name.trim() || name.trim().length > 120 || (isMeasuredNode(node) && (value === undefined || parseValue(String(value)) === null))) throw new Error("Некоректні дані частини.");
-  if (!isMeasuredNode(node)) return updateNodeById(root, id, previous => ({ ...previous, name: name.trim() }));
+  const appearance = color === undefined ? node.color : color ?? undefined;
+  const nextIcon = icon === undefined ? node.icon : icon ?? undefined;
+  const decorate = (previous: Node) => withNodeIcon(withNodeColor(previous, appearance), nextIcon);
+  if (!isMeasuredNode(node)) return updateNodeById(root, id, previous => decorate({ ...previous, name: name.trim() }));
   if (value === undefined) throw new Error("Некоректні дані частини.");
   const measuredValue = value;
   if (units(value) < units(sumValues(node.children))) throw new Error("Значення не може бути меншим за суму вкладених частин.");
@@ -57,7 +62,8 @@ export function editPart(root: Node, id: string, name: string, value?: number): 
     } else parent.children.forEach(checkParent);
   }
   if (root.id !== id) checkParent(root);
-  return updateNodeById(root, id, (previous) => ({ ...previous, name: name.trim(), value: measuredValue }));
+  return updateNodeById(root, id, (previous) => isMeasuredNode(previous)
+    ? decorate({ ...previous, name: name.trim(), value: measuredValue }) : previous);
 }
 
 export function deletePart(root: Node, id: string): Node {
@@ -82,10 +88,16 @@ export function decodeDocument(raw: string): Document {
         typeof node.name !== "string" || !node.name.trim() || node.name.length > 120 ||
         !Array.isArray(node.children)) throw new Error("Некоректні дані збереження.");
     ids.add(node.id);
+    if (node.color !== undefined && !isNodeColor(node.color)) throw new Error("Некоректний колір.");
+    if (node.icon !== undefined && !isNodeIcon(node.icon)) throw new Error("Некоректний значок.");
+    const appearance = {
+      ...(node.color === undefined ? {} : { color: node.color as NodeColor }),
+      ...(node.icon === undefined ? {} : { icon: node.icon as NodeIcon }),
+    };
     if (mode === "structural") {
       if (expectedUnit !== undefined || typeof node.weight !== "number" || !Number.isFinite(node.weight) || node.weight <= 0)
         throw new Error("Некоректні дані збереження.");
-      return { id: node.id, name: node.name, mode, weight: node.weight, children: node.children.map(child => read(child, depth + 1)) };
+      return { id: node.id, name: node.name, ...appearance, mode, weight: node.weight, children: node.children.map(child => read(child, depth + 1)) };
     }
     if (mode !== "measured" || typeof node.unit !== "string" || !node.unit.trim() || node.unit.length > 20 ||
         (expectedUnit !== undefined && node.unit !== expectedUnit) ||
@@ -93,7 +105,7 @@ export function decodeDocument(raw: string): Document {
         Math.abs(node.value - units(node.value) / SCALE) > 1e-10) throw new Error("Некоректні дані збереження.");
     const children = node.children.map(child => read(child, depth + 1, node.unit as string));
     if (units(sumValues(children)) > units(node.value)) throw new Error("Частини перевищують ціле.");
-    return { id: node.id, name: node.name, mode, value: units(node.value) / SCALE, unit: node.unit, children };
+    return { id: node.id, name: node.name, ...appearance, mode, value: units(node.value) / SCALE, unit: node.unit, children };
   }
   const root = data.root === null ? null : read(data.root, 0);
   if (data.pathIds.length > 41 || data.pathIds.some((id: unknown) => typeof id !== "string")) throw new Error("Некоректний шлях.");
@@ -105,12 +117,13 @@ export function encodeDocument(document: Document): string {
 }
 
 // Creation keeps optional input at the boundary; persisted nodes always have an explicit mode.
-export function createNode(id: string, name: string, value?: number, unit = ""): Node {
+export function createNode(id: string, name: string, value?: number, unit = "", color?: NodeColor, icon?: NodeIcon): Node {
   const errors = validateFields(name, value === undefined ? "1" : String(value), value === undefined ? undefined : unit);
   if (Object.keys(errors).length) throw new Error(Object.values(errors)[0]);
-  return value === undefined
+  const node: Node = value === undefined
     ? { id, name: name.trim(), mode: "structural", weight: 1, children: [] }
     : { id, name: name.trim(), mode: "measured", value, unit: unit.trim(), children: [] };
+  return withNodeIcon(withNodeColor(node, color), icon);
 }
 export function addPart(root: Node, parentId: string, child: Node): Node {
   const parent = findNodeById(root, parentId);

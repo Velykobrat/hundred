@@ -3,9 +3,9 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const temp = new URL('./.cache/', import.meta.url);
 mkdirSync(temp, { recursive: true });
-for (const name of ['node-mode', 'tree', 'document', 'history', 'treemap', 'collection', 'percentage']) {
+for (const name of ['i18n', 'node-icon', 'node-color', 'node-mode', 'tree', 'document', 'history', 'treemap', 'collection', 'percentage']) {
   const source = readFileSync(new URL(`../src/lib/${name}.ts`, import.meta.url), 'utf8');
-  const js = stripTypeScriptTypes(source).replace(/from "\.\/(node-mode|tree|document|collection|percentage)"/g, 'from "./$1.mjs"');
+  const js = stripTypeScriptTypes(source).replace(/from "\.\/(node-icon|node-color|node-mode|tree|document|collection|percentage)"/g, 'from "./$1.mjs"');
   writeFileSync(new URL(`${name}.mjs`, temp), js);
 }
 const { createNode, addPart, parseValue, remaining, sumValues, editPart, deletePart, decodeDocument, encodeDocument, normalizeDocument } = await import(new URL('document.mjs', temp));
@@ -257,6 +257,89 @@ check('v3 validation rejects invalid modes, weights, measured structure, IDs and
   let deep = createNode('deep-41', 'Deep');
   for (let depth = 40; depth >= 0; depth--) deep = { ...createNode('deep-' + depth, 'Deep'), children: [deep] };
   assert.throws(() => decodeDocument(wrap(deep)));
+});
+const { getNodeColor, NODE_COLORS } = await import(new URL('node-color.mjs', temp));
+check('Explicit color persists for measured and structural nodes through v3 backup/import', () => {
+  const colored = createNode('colored', 'Colored', undefined, '', '#277b72');
+  const child = createNode('budget-color', 'Budget', 100, 'UAH', '#555ab5');
+  const mixedColors = addPart(colored, colored.id, child);
+  const collection = putDocument(emptyCollection, { root: mixedColors, pathIds: [colored.id, child.id] });
+  assert.deepEqual(decodeCollection(encodeCollection(collection)), collection);
+  assert.equal(JSON.parse(encodeCollection(collection)).version, 3);
+  let i = 0;
+  const copy = cloneDocument(collection.documents[0], () => 'color-copy-' + ++i);
+  assert.equal(copy.root.color, colored.color);
+  assert.equal(copy.root.children[0].color, child.color);
+  assert.equal(getNodeColor(copy.root), getNodeColor(colored));
+});
+check('Color edits preserve children and capacity; Automatic removes explicit color', () => {
+  const colored = editPart(root, 'a', 'A', 60, '#347b5c');
+  assert.equal(colored.children[0].color, '#347b5c');
+  assert.deepEqual(colored.children[0].children, root.children[0].children);
+  assert.equal(remaining(colored), remaining(root));
+  assert.equal(editPart(colored, 'a', 'Renamed', 60).children[0].color, '#347b5c');
+  assert.equal(editPart(colored, 'a', 'A', 60, null).children[0].color, undefined);
+  assert.throws(() => editPart(root, 'a', 'A', 101, '#347b5c'));
+});
+check('Undo and redo include color changes', () => {
+  const document = { root: structural, pathIds: [structural.id] };
+  const colored = editPart(structural, structural.id, structural.name, undefined, '#a14e56');
+  let state = documentReducer(initialState, { type: 'load', document });
+  state = documentReducer(state, { type: 'change', document: { ...document, root: colored }, notice: '' });
+  assert.equal(documentReducer(state, { type: 'undo' }).document.root.color, undefined);
+  state = documentReducer(documentReducer(state, { type: 'undo' }), { type: 'redo' });
+  assert.equal(state.document.root.color, '#a14e56');
+});
+check('Legacy colors remain deterministic; invalid appearance is rejected', () => {
+  assert.equal(getNodeColor(root), getNodeColor({ id: root.id }));
+  assert.ok(NODE_COLORS.some(color => color.value === getNodeColor(root)));
+  for (const color of ['red', 'url(example)', '#ffffff', null]) {
+    assert.throws(() => decodeDocument(JSON.stringify({ version: 3, root: { ...root, color }, pathIds: [root.id] })));
+  }
+  assert.equal(decodeDocument(encodeDocument({ root, pathIds: [root.id] })).root.color, undefined);
+});
+const { getNodeIcon } = await import(new URL('node-icon.mjs', temp));
+check('Icons and colors survive mixed-tree export/import and duplication', () => {
+  const colored = createNode('icons', 'Team', undefined, '', '#277b72', 'people');
+  const budget = createNode('icon-budget', 'Budget', 100, 'UAH', '#555ab5', 'money');
+  const tree = addPart(colored, colored.id, budget);
+  const collection = putDocument(emptyCollection, { root: tree, pathIds: [tree.id, budget.id] });
+  assert.deepEqual(decodeCollection(encodeCollection(collection)), collection);
+  let i = 0;
+  const copy = cloneDocument(collection.documents[0], () => 'icon-copy-' + ++i);
+  assert.equal(copy.root.icon, 'people');
+  assert.equal(copy.root.children[0].icon, 'money');
+  assert.equal(copy.root.color, '#277b72');
+  assert.equal(getNodeIcon(root), 'resource');
+});
+check('Icon edits and reset preserve values, colors and descendants with undo/redo', () => {
+  const colored = createNode('icon-edit', 'Hours', 24, 'h', '#555ab5', 'clock');
+  const tree = addPart(colored, colored.id, createNode('work-hours', 'Work', 8, 'h'));
+  const changed = editPart(tree, tree.id, tree.name, tree.value, undefined, 'target');
+  assert.equal(changed.icon, 'target');
+  assert.equal(changed.color, tree.color);
+  assert.deepEqual(changed.children, tree.children);
+  assert.equal(remaining(changed), remaining(tree));
+  assert.equal(editPart(changed, changed.id, 'Rename', 24).icon, 'target');
+  assert.equal(editPart(changed, changed.id, changed.name, 24, undefined, null).icon, undefined);
+  let state = documentReducer(initialState, { type: 'load', document: { root: tree, pathIds: [tree.id] } });
+  state = documentReducer(state, { type: 'change', document: { root: changed, pathIds: [tree.id] }, notice: '' });
+  const undo = documentReducer(state, { type: 'undo' });
+  assert.equal(undo.document.root.icon, 'clock');
+  assert.equal(documentReducer(undo, { type: 'redo' }).document.root.icon, 'target');
+});
+check('Invalid icon metadata is rejected; older trees keep the standard icon', () => {
+  for (const icon of ['unknown', '<svg>', '', null, 7]) {
+    assert.throws(() => decodeDocument(JSON.stringify({ version: 3, root: { ...root, icon }, pathIds: [root.id] })));
+  }
+  assert.equal(getNodeIcon(decodeDocument(encodeDocument({ root, pathIds: [root.id] })).root), 'resource');
+});
+const { decodePreferences } = await import(new URL('i18n.mjs', temp));
+check('Structure view preference remains compatible with older language/theme settings', () => {
+  assert.deepEqual(decodePreferences('{"language":"en","theme":"light"}'), { language: 'en', theme: 'light', structureView: 'cards' });
+  assert.deepEqual(decodePreferences('{"language":"uk","theme":"system","structureView":"list"}'), { language: 'uk', theme: 'system', structureView: 'list' });
+  assert.equal(decodePreferences('{"structureView":"invalid"}').structureView, 'cards');
+  assert.equal(decodePreferences(null).structureView, 'cards');
 });
 console.log(tested + ' core scenarios passed');
 await import('./pwa.mjs');

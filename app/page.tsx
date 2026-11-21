@@ -5,6 +5,8 @@ import { PreferencesProvider, usePreferences } from "../src/lib/use-preferences"
 import { useMemo, useState } from "react";
 import NodeMetadata from "../src/components/NodeMetadata";
 import PwaRegistration from "../src/components/PwaRegistration";
+import { getNodeColor } from "../src/lib/node-color";
+import { getNodeIcon } from "../src/lib/node-icon";
 import { isMeasuredNode } from "../src/lib/node-mode";
 import type { Node } from "../src/types/node";
 import { findNodeById, countDescendants as countParts, findParent } from "../src/lib/tree";
@@ -21,10 +23,11 @@ import Icon from "../src/components/Icon";
 import NodeForm from "../src/components/NodeForm";
 import Modal from "../src/components/Modal";
 import Treemap from "../src/components/Treemap";
+import StructureViewToggle from "../src/components/StructureViewToggle";
 import ImportBackup from "../src/components/ImportBackup";
 
 function Workspace() {
-  const { t, formatNumber, formatPercent, translateMessage } = usePreferences();
+  const { t, formatNumber, formatPercent, translateMessage, structureView } = usePreferences();
   const workspace = useDocument();
   const { root, pathIds } = workspace.document;
   const [screen, setScreen] = useScreen();
@@ -119,8 +122,8 @@ function Workspace() {
           <section className="create-resource">
             <header className="screen-heading"><p className="eyebrow">{t("Почни з цілого")}</p><h1>{t("Нове ціле")}</h1><p>{t("Створи ціле з кількістю або без неї.")}</p></header>
             {workspace.collection.documents.length >= MAX_DOCUMENTS ? <div className="surface p-6"><p>{t("Збережено всі")}{" "}{MAX_DOCUMENTS} {" "}{t("цілих. Звільни місце, перш ніж створювати нове.")}</p><button type="button" className="primary-button mt-5" onClick={() => goToScreen("home")}>{t("Мої цілі")}</button></div> : <div className="surface p-5 sm:p-7">
-              <NodeForm createWhole submitLabel={t("Створити ціле")} onCancel={() => goToScreen("home")} onSubmit={(name, value, unit) => {
-                const newRoot = createNode(crypto.randomUUID(), name, value, unit);
+              <NodeForm createWhole submitLabel={t("Створити ціле")} onCancel={() => goToScreen("home")} onSubmit={(name, value, unit, color, icon) => {
+                const newRoot = createNode(crypto.randomUUID(), name, value, unit, color, icon);
                 return workspace.change({ root: newRoot, pathIds: [newRoot.id] }, t("Ціле створено. Додай першу частину."));
               }} />
             </div>}
@@ -132,7 +135,7 @@ function Workspace() {
               <div className="resource-title-row">
                 <div className="min-w-0">
                   <p className="eyebrow">{path.length === 1 ? t("Ціле") : t("Частина · рівень {p0}", {p0: path.length})}</p>
-                  <h1>{current.name}</h1>
+                  <h1>{current.icon && <span className="whole-title-icon" style={{ color: getNodeColor(current) }}><Icon name={getNodeIcon(current)} width="28" height="28" /></span>}{current.name}</h1>
                   <p className="resource-value"><NodeMetadata node={current} />{isMeasuredNode(current) && <span>{t("100% цього рівня")}</span>}</p>
                   {isMeasuredNode(current) && isMeasuredNode(root) && current.id !== root.id && <p className="resource-root-share">{formatPercent(current.value / root.value * 100)} {t("від усього «{name}»", { name: root.name })}</p>}
                 </div>
@@ -145,12 +148,14 @@ function Workspace() {
               </div>}
               <button type="button" className="primary-button add-part-button" disabled={(isMeasuredNode(current) && free === 0) || atLimit} onClick={() => setAdding(true)}><Icon name="plus" /><span>{t("Додати частину")}</span></button>
             </header>
-            <div className="workspace-grid">
+            <div className={`workspace-grid${!isMeasuredNode(current) && structureView === "list" ? " structure-list-workspace" : ""}`}>
               <div className="min-w-0">
-                <div className="map-heading"><h2>{t("Карта цілого")}</h2><span>{t("Натисни частину, щоб відкрити")}</span></div>
-                <Treemap node={current} onOpen={openNode} />
+                <div className="map-heading"><h2>{isMeasuredNode(current) ? t("Карта цілого") : t("Структура частин")}</h2>{isMeasuredNode(current) ? <span>{t("Натисни частину, щоб відкрити")}</span> : <StructureViewToggle />}</div>
+                {!isMeasuredNode(current) && structureView === "list"
+                  ? <PartsList node={current} free={free} atLimit={atLimit} onOpen={openNode} onActions={setActionsId} />
+                  : <Treemap node={current} onOpen={openNode} />}
               </div>
-              <aside><PartsList node={current} free={free} atLimit={atLimit} onOpen={openNode} onActions={setActionsId} /></aside>
+              {(isMeasuredNode(current) || structureView === "cards") && <aside><PartsList node={current} free={free} atLimit={atLimit} onOpen={openNode} onActions={setActionsId} /></aside>}
             </div>
           </>
         ) : <p role="alert">{t("Не вдалося відкрити частину.")}{" "}<button type="button" onClick={() => goToPath([root.id])} className="underline">{t("Повернутися до цілого")}</button></p>)}
@@ -175,8 +180,8 @@ function Workspace() {
         {adding && current && root && <Modal title={t("Додати частину")} onClose={() => setAdding(false)}>
           {isMeasuredNode(current) && <p className="mb-5 text-sm text-neutral-400">{t("Доступно")}{" "}{formatNumber(free)} {current.unit}</p>}
           {atLimit ? <p className="text-sm text-amber-300">{t("Досягнуто межі розміру розподілу. Відредагуй наявні частини.")}</p> :
-            <NodeForm key={current.id} optionalQuantity={!isMeasuredNode(current)} unit={isMeasuredNode(current) ? current.unit : ""} available={isMeasuredNode(current) ? free : undefined} parentValue={isMeasuredNode(current) ? current.value : undefined} parentName={current.name} submitLabel={t("Додати частину")} onCancel={() => setAdding(false)} onSubmit={(name, value, unit) => {
-              const child = createNode(crypto.randomUUID(), name, value, isMeasuredNode(current) ? current.unit : unit);
+            <NodeForm key={current.id} optionalQuantity={!isMeasuredNode(current)} unit={isMeasuredNode(current) ? current.unit : ""} available={isMeasuredNode(current) ? free : undefined} parentValue={isMeasuredNode(current) ? current.value : undefined} parentName={current.name} submitLabel={t("Додати частину")} onCancel={() => setAdding(false)} onSubmit={(name, value, unit, color, icon) => {
+              const child = createNode(crypto.randomUUID(), name, value, isMeasuredNode(current) ? current.unit : unit, color, icon);
               const nextRoot = addPart(root, current.id, child);
               const issue = workspace.change({ root: nextRoot, pathIds }, t("Додано «{p0}».", {p0: name}));
               if (issue) return issue;
@@ -186,9 +191,9 @@ function Workspace() {
 
         {editing && root && <Modal key={editing.id} title={editing.id === root.id ? t("Редагувати ціле") : t("Редагувати частину")} onClose={() => setEditingId(null)}>
           <p className="mb-5 text-sm leading-relaxed text-neutral-400">{isMeasuredNode(editing) ? t("Зміни назву або значення. Вкладені частини залишаться.") : t("Тип цілого після створення не змінюється.")}{availableForEdit !== undefined ? t(" Доступно до {p0} {p1}.", {p0: formatNumber(availableForEdit), p1: isMeasuredNode(editing) ? editing.unit : ""}) : ""}</p>
-          <NodeForm key={editing.id} initialName={editing.name} structuralEdit={!isMeasuredNode(editing)} initialValue={isMeasuredNode(editing) ? editing.value : undefined} unit={isMeasuredNode(editing) ? editing.unit : ""} minimum={sumValues(editing.children)} available={availableForEdit} parentValue={parent && isMeasuredNode(parent) ? parent.value : undefined} parentName={parent?.name} submitLabel={t("Зберегти зміни")} onCancel={() => setEditingId(null)} onSubmit={(name, value) => {
+          <NodeForm key={editing.id} initialName={editing.name} initialColor={editing.color} initialIcon={editing.icon} structuralEdit={!isMeasuredNode(editing)} initialValue={isMeasuredNode(editing) ? editing.value : undefined} unit={isMeasuredNode(editing) ? editing.unit : ""} minimum={sumValues(editing.children)} available={availableForEdit} parentValue={parent && isMeasuredNode(parent) ? parent.value : undefined} parentName={parent?.name} submitLabel={t("Зберегти зміни")} onCancel={() => setEditingId(null)} onSubmit={(name, value, _unit, color, icon) => {
             try {
-              const nextRoot = editPart(root, editing.id, name, value);
+              const nextRoot = editPart(root, editing.id, name, value, color ?? null, icon ?? null);
               const issue = workspace.change({ root: nextRoot, pathIds }, t("Зміни до «{p0}» збережено.", {p0: name}));
               if (issue) return issue;
               setEditingId(null);

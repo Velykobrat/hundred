@@ -256,3 +256,18 @@ svg { flex-shrink: 0; }
 .structural-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; }
 .structural-card { min-height: 140px; padding: 20px; text-align: left; display: flex; flex-direction: column; gap: 12px; overflow-wrap: anywhere; }
 .structural-card span { color: var(--muted); font-size: 13px; }
+
+.color-selector { border: 0; padding: 0; min-width: 0; }
+.color-selector legend { margin-bottom: 8px; font-size: 14px; color: var(--secondary); }
+.color-options { display: flex; flex-wrap: wrap; gap: 4px; }
+.color-auto { display: flex; align-items: center; gap: 9px; min-height: 44px; width: 100%; font-size: 13px; color: var(--secondary); cursor: pointer; }
+.color-auto input { accent-color: var(--accent); }
+.color-option { position: relative; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; cursor: pointer; }
+.color-option input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.color-swatch { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; color: #fff; font-size: 17px; pointer-events: none; }
+.color-option input:checked + .color-swatch { outline: 2px solid var(--foreground); outline-offset: 3px; }
+.color-option input:focus-visible + .color-swatch { outline: 2px solid var(--accent); outline-offset: 6px; }
+
+.whole-title-icon { display: inline-flex; vertical-align: baseline; margin-right: 10px; }
+.part-node-icon { margin-left: -3px; }
+.structural-card-title { display: flex; align-items: center; gap: 10px; }

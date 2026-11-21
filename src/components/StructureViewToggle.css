@@ -1,0 +1,5 @@
+.structure-view-toggle { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--border-strong); border-radius: 13px; background: var(--surface); }
+.structure-view-toggle button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 8px 12px; border-radius: 10px; color: var(--muted); font-size: 13px; }
+.structure-view-toggle button:hover { background: var(--hover); }
+.structure-view-toggle button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); }
+.workspace-grid.structure-list-workspace { grid-template-columns: minmax(0, 1fr); }
