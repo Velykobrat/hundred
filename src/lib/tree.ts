@@ -49,3 +49,17 @@ export function findParent(root: Node, id: string): Node | null {
   }
   return null;
 }
+
+// Array order is the source of truth for cards, lists, navigation and backups.
+export function movePart(root: Node, id: string, direction: "up" | "down"): Node {
+  const parent = findParent(root, id);
+  if (!parent) return root;
+  const index = parent.children.findIndex(child => child.id === id);
+  const target = index + (direction === "up" ? -1 : 1);
+  if (target < 0 || target >= parent.children.length) return root;
+  return updateNodeById(root, parent.id, node => {
+    const children = [...node.children];
+    [children[index], children[target]] = [children[target], children[index]];
+    return { ...node, children };
+  });
+}

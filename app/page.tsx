@@ -9,7 +9,7 @@ import { getNodeColor } from "../src/lib/node-color";
 import { getNodeIcon } from "../src/lib/node-icon";
 import { isMeasuredNode } from "../src/lib/node-mode";
 import type { Node } from "../src/types/node";
-import { findNodeById, countDescendants as countParts, findParent } from "../src/lib/tree";
+import { findNodeById, countDescendants as countParts, findParent, movePart } from "../src/lib/tree";
 import { addPart, createNode, deletePart, editPart, remaining, sumValues, units } from "../src/lib/document";
 import { encodeCollection, MAX_DOCUMENTS } from "../src/lib/collection";
 import { useDocument } from "../src/lib/use-document";
@@ -45,6 +45,8 @@ function Workspace() {
   const editing = root && editingId ? findNodeById(root, editingId) : null;
   const deleting = root && deletingId ? findNodeById(root, deletingId) : null;
   const actionNode = root && actionsId ? findNodeById(root, actionsId) : null;
+  const actionParent = root && actionNode ? findParent(root, actionNode.id) : null;
+  const actionIndex = actionParent?.children.findIndex(child => child.id === actionNode?.id) ?? -1;
   const parent = root && editing ? findParent(root, editing.id) : null;
   const availableForEdit = editing && parent && isMeasuredNode(parent) ? (units(parent.value) - units(sumValues(parent.children.filter((child) => child.id !== editing.id)))) / 1_000_000 : undefined;
   const free = current ? remaining(current) : 0;
@@ -75,8 +77,20 @@ function Workspace() {
   function openNode(node: Node) {
     goToPath([...pathIds, node.id]);
   }
+  function moveActionPart(direction: "up" | "down") {
+    if (!root || !actionNode) return;
+    const nextRoot = movePart(root, actionNode.id, direction);
+    if (nextRoot === root) return;
+    const issue = workspace.change({ root: nextRoot, pathIds }, t("Порядок частин змінено."));
+    if (issue) setActionError(issue);
+  }
   function selectDocument(id: string | null) {
     workspace.select(id);
+    goToScreen("resource");
+  }
+  function openSearchResult(id: string, nextPath: string[]) {
+    const issue = workspace.open(id, nextPath);
+    if (issue) { setActionError(issue); return; }
     goToScreen("resource");
   }
   function downloadBackup() {
@@ -114,7 +128,7 @@ function Workspace() {
           {actionError && <p role="alert" className="mt-2 text-sm text-rose-300">{translateMessage(actionError)}</p>}
         </div>}
 
-        {screen === "home" && <ResourceLibrary collection={workspace.collection} onOpen={selectDocument} onCreate={() => selectDocument(null)} onImport={() => setImporting(true)} />}
+        {screen === "home" && <ResourceLibrary collection={workspace.collection} onOpen={selectDocument} onOpenResult={openSearchResult} onCreate={() => selectDocument(null)} onImport={() => setImporting(true)} />}
 
         {screen === "settings" && <SettingsPanel count={workspace.collection.documents.length} storageError={workspace.storageError} canExport={workspace.collection.documents.length > 0 || Boolean(workspace.storageError)} onExport={downloadBackup} onImport={() => setImporting(true)} />}
 
@@ -136,7 +150,7 @@ function Workspace() {
                 <div className="min-w-0">
                   <p className="eyebrow">{path.length === 1 ? t("Ціле") : t("Частина · рівень {p0}", {p0: path.length})}</p>
                   <h1>{current.icon && <span className="whole-title-icon" style={{ color: getNodeColor(current) }}><Icon name={getNodeIcon(current)} width="28" height="28" /></span>}{current.name}</h1>
-                  <p className="resource-value"><NodeMetadata node={current} />{isMeasuredNode(current) && <span>{t("100% цього рівня")}</span>}</p>
+                  <p className="resource-value"><NodeMetadata node={current} /></p>
                   {isMeasuredNode(current) && isMeasuredNode(root) && current.id !== root.id && <p className="resource-root-share">{formatPercent(current.value / root.value * 100)} {t("від усього «{name}»", { name: root.name })}</p>}
                 </div>
                 <button type="button" className="icon-button" aria-label={t("Дії для «{p0}»", {p0: current.name})} onClick={() => setActionsId(current.id)}><Icon name="more" /></button>
@@ -148,14 +162,14 @@ function Workspace() {
               </div>}
               <button type="button" className="primary-button add-part-button" disabled={(isMeasuredNode(current) && free === 0) || atLimit} onClick={() => setAdding(true)}><Icon name="plus" /><span>{t("Додати частину")}</span></button>
             </header>
-            <div className={`workspace-grid${!isMeasuredNode(current) && structureView === "list" ? " structure-list-workspace" : ""}`}>
+            <div className={`workspace-grid${!isMeasuredNode(current) && (structureView === "list" || !current.children.length) ? " structure-list-workspace" : ""}`}>
               <div className="min-w-0">
-                <div className="map-heading"><h2>{isMeasuredNode(current) ? t("Карта цілого") : t("Структура частин")}</h2>{isMeasuredNode(current) ? <span>{t("Натисни частину, щоб відкрити")}</span> : <StructureViewToggle />}</div>
-                {!isMeasuredNode(current) && structureView === "list"
+                <div className="map-heading"><h2>{isMeasuredNode(current) ? t("Карта цілого") : t("Структура частин")}</h2>{!isMeasuredNode(current) && <StructureViewToggle />}</div>
+                {!isMeasuredNode(current) && (structureView === "list" || !current.children.length)
                   ? <PartsList node={current} free={free} atLimit={atLimit} onOpen={openNode} onActions={setActionsId} />
                   : <Treemap node={current} onOpen={openNode} />}
               </div>
-              {(isMeasuredNode(current) || structureView === "cards") && <aside><PartsList node={current} free={free} atLimit={atLimit} onOpen={openNode} onActions={setActionsId} /></aside>}
+              {(isMeasuredNode(current) || (structureView === "cards" && current.children.length > 0)) && <aside><PartsList node={current} free={free} atLimit={atLimit} onOpen={openNode} onActions={setActionsId} /></aside>}
             </div>
           </>
         ) : <p role="alert">{t("Не вдалося відкрити частину.")}{" "}<button type="button" onClick={() => goToPath([root.id])} className="underline">{t("Повернутися до цілого")}</button></p>)}
@@ -169,6 +183,10 @@ function Workspace() {
               if (parentIndex >= 0) goToPath([...path.slice(0, parentIndex + 1).map((node) => node.id), actionNode.id]);
             }}><Icon name="resource" /><span>{t("Відкрити частину")}</span><Icon name="chevron" width="16" height="16" /></button>}
             <button type="button" onClick={() => { setActionsId(null); setEditingId(actionNode.id); }}><Icon name="edit" /><span>{actionNode.id === root.id ? t("Редагувати ціле") : t("Редагувати частину")}</span></button>
+            {actionParent && <>
+              <button type="button" disabled={actionIndex <= 0} onClick={() => moveActionPart("up")}><Icon name="back" style={{ transform: "rotate(90deg)" }} /><span>{t("Перемістити вище")}</span></button>
+              <button type="button" disabled={actionIndex >= actionParent.children.length - 1} onClick={() => moveActionPart("down")}><Icon name="back" style={{ transform: "rotate(-90deg)" }} /><span>{t("Перемістити нижче")}</span></button>
+            </>}
             {actionNode.id === root.id && <button type="button" disabled={workspace.collection.documents.length >= MAX_DOCUMENTS} onClick={() => {
               const issue = workspace.duplicate(t("Копія — {name}", { name: root.name }));
               if (issue) { setActionError(issue); setActionsId(null); } else goToScreen("resource");

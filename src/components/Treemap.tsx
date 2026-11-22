@@ -12,9 +12,9 @@ import { getNodeColor } from "../lib/format";
 export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: Node) => void }) {
   const { t, formatNumber, formatPercent } = usePreferences();
   if (!isMeasuredNode(node)) return <section aria-label={t("Структура частин")} className="structural-grid">
-    {node.children.length ? node.children.map(child => <button type="button" key={child.id} className="surface structural-card" style={{ borderTop: "4px solid " + getNodeColor(child) }} onClick={() => onOpen(child)}>
+    {node.children.map(child => <button type="button" key={child.id} className="surface structural-card" style={{ borderTop: "4px solid " + getNodeColor(child) }} onClick={() => onOpen(child)}>
       <div className="structural-card-title">{child.icon && <Icon name={child.icon} style={{ color: getNodeColor(child) }} />}<strong>{child.name}</strong></div>{isMeasuredNode(child) && <span><NodeMetadata node={child} /></span>}
-    </button>) : <p className="surface p-6">{t("Додай першу частину структури.")}</p>}
+    </button>)}
   </section>;
   const totalValue = node.value;
   const free = remaining(node);

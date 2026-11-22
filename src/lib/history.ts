@@ -8,6 +8,7 @@ export type Action =
   | { type: "replace"; collection: Collection; notice: string }
   | { type: "navigate"; pathIds: string[] }
   | { type: "select"; id: string | null }
+  | { type: "open"; id: string; pathIds: string[] }
   | { type: "remove"; id: string }
   | { type: "undo" | "redo" }
   | { type: "storage"; error: string | null };
@@ -25,6 +26,10 @@ export function documentReducer(state: State, action: Action): State {
   }
   if (action.type === "storage") return { ...state, storageError: action.error };
   if (action.type === "navigate") return state.document.root ? withCollection(state, putDocument(state.collection, { ...state.document, pathIds: action.pathIds })) : state;
+  if (action.type === "open") {
+    const document = state.collection.documents.find(item => item.root?.id === action.id);
+    return document ? withCollection({ ...state, notice: "" }, putDocument(state.collection, { ...document, pathIds: action.pathIds })) : state;
+  }
   if (action.type === "select") {
     if (action.id !== null && !state.collection.documents.some((document) => document.root?.id === action.id)) return state;
     return withCollection({ ...state, notice: "" }, { ...state.collection, activeId: action.id });

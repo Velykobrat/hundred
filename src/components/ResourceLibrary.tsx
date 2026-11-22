@@ -9,6 +9,9 @@ import { MAX_DOCUMENTS } from "../lib/collection";
 import { remaining } from "../lib/document";
 import { getNodeColor } from "../lib/format";
 import Icon from "./Icon";
+import { useState } from "react";
+import LibraryIntro from "./LibraryIntro";
+import WholeSearch from "./WholeSearch";
 
 function levelLabel(count: number, language: "uk" | "en") {
   if (language === "en") return count === 1 ? "level" : "levels";
@@ -17,16 +20,15 @@ function levelLabel(count: number, language: "uk" | "en") {
   return count % 10 >= 2 && count % 10 <= 4 ? "рівні" : "рівнів";
 }
 
-export default function ResourceLibrary({ collection, onOpen, onCreate, onImport }: { collection: Collection; onOpen: (id: string) => void; onCreate: () => void; onImport: () => void }) {
+export default function ResourceLibrary({ collection, onOpen, onOpenResult, onCreate, onImport }: { collection: Collection; onOpen: (id: string) => void; onOpenResult: (rootId: string, pathIds: string[]) => void; onCreate: () => void; onImport: () => void }) {
   const { t, formatPercent, language } = usePreferences();
   const full = collection.documents.length >= MAX_DOCUMENTS;
-  return <section className="resource-library" aria-labelledby="library-heading">
-    <header className="library-header">
-      <div><h1 id="library-heading" className="library-description">{t("Твої збережені цілі. Обери ціле або створи нове.")}</h1></div>
-      <button type="button" className="primary-button" onClick={onCreate} disabled={full}><Icon name="plus" /><span>{t("Нове ціле")}</span></button>
-    </header>
+  const [query, setQuery] = useState("");
+  return <section className="resource-library" aria-label={t("Твої збережені цілі. Обери ціле або створи нове.")}>
+    <LibraryIntro />
+    {collection.documents.length > 0 && <WholeSearch collection={collection} query={query} onQueryChange={setQuery} onOpen={onOpenResult} onCreate={onCreate} full={full} />}
     {collection.documents.length ? <>
-      <div className="resource-library-grid">
+      {!query.trim() && <div className="resource-library-grid">
         {collection.documents.map(({ root, pathIds }) => {
           if (!root) return null;
           const usedPercent = isMeasuredNode(root) ? (root.value - remaining(root)) / root.value * 100 : 0;
@@ -36,15 +38,14 @@ export default function ResourceLibrary({ collection, onOpen, onCreate, onImport
             <span className="resource-card-name">{root.name}</span>
             <span className="resource-card-value"><NodeMetadata node={root} /></span>
             {isMeasuredNode(root) && <span className="usage-track" aria-hidden="true"><span style={{ width: `${usedPercent}%`, backgroundColor: getNodeColor(root) }} /></span>}
-            <span className="resource-card-footer">{isMeasuredNode(root) ? <span className="resource-card-stats"><span>{root.children.length} {t("частин ·")} {formatPercent(usedPercent)} {t("розподілено")}</span><span>{levels} {levelLabel(levels, language)}</span></span> : <span aria-hidden="true" />}<span>{pathIds.length > 1 ? t("Продовжити") : t("Відкрити")}</span></span>
+            {(isMeasuredNode(root) || pathIds.length > 1) && <span className="resource-card-footer">{isMeasuredNode(root) && <span className="resource-card-stats"><span>{root.children.length} {t("частин ·")} {formatPercent(usedPercent)} {t("розподілено")}</span><span>{levels} {levelLabel(levels, language)}</span></span>}{pathIds.length > 1 && <span className="resource-card-continue">{t("Продовжити")}</span>}</span>}
           </button>;
         })}
-      </div>
+      </div>}
       {full && <p className="parts-note">{t("Збережено всі")}{" "}{MAX_DOCUMENTS} {" "}{t("цілих. Щоб додати нове, видали одне з наявних.")}</p>}
     </> : <div className="library-empty surface">
-      <div className="welcome-map" aria-hidden="true"><span>{t("Ціле")}</span><span>{t("Частина")}</span><span>{t("Вільно")}</span></div>
-      <h2>{t("Побач ціле.")}<br />{t("Знайди місце кожній частині.")}</h2>
-      <p>{t("Почни зі структури, списку, бюджету, часу або простору. Кожну частину можна відкрити як нове ціле.")}</p>
+      <h2>{t("Тут поки немає цілих.")}</h2>
+      <p>{t("Створи ціле з кількістю або без неї.")}</p>
       <button type="button" className="primary-button" onClick={onCreate}><Icon name="plus" />{t("Створити перше ціле")}</button>
       <button type="button" className="text-button" onClick={onImport}>{t("Маю резервну копію")}</button>
     </div>}

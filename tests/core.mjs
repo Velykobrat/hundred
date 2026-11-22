@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const temp = new URL('./.cache/', import.meta.url);
 mkdirSync(temp, { recursive: true });
-for (const name of ['i18n', 'node-icon', 'node-color', 'node-mode', 'tree', 'document', 'history', 'treemap', 'collection', 'percentage']) {
+for (const name of ['search', 'i18n', 'node-icon', 'node-color', 'node-mode', 'tree', 'document', 'history', 'treemap', 'collection', 'percentage']) {
   const source = readFileSync(new URL(`../src/lib/${name}.ts`, import.meta.url), 'utf8');
   const js = stripTypeScriptTypes(source).replace(/from "\.\/(node-icon|node-color|node-mode|tree|document|collection|percentage)"/g, 'from "./$1.mjs"');
   writeFileSync(new URL(`${name}.mjs`, temp), js);
@@ -340,6 +340,95 @@ check('Structure view preference remains compatible with older language/theme se
   assert.deepEqual(decodePreferences('{"language":"uk","theme":"system","structureView":"list"}'), { language: 'uk', theme: 'system', structureView: 'list' });
   assert.equal(decodePreferences('{"structureView":"invalid"}').structureView, 'cards');
   assert.equal(decodePreferences(null).structureView, 'cards');
+});
+const { movePart } = await import(new URL('tree.mjs', temp));
+check('Reorder measured siblings without changing allocation, IDs or descendants', () => {
+  const reordered = movePart(root, 'a', 'down');
+  assert.deepEqual(reordered.children.map(child => child.id), ['b', 'a']);
+  assert.deepEqual(root.children.map(child => child.id), ['a', 'b']);
+  assert.equal(reordered.children[1], root.children[0]);
+  assert.equal(remaining(reordered), remaining(root));
+  assert.deepEqual(movePart(reordered, 'a', 'up'), root);
+});
+check('Reorder mixed structural subtrees while preserving navigation, appearance and backups', () => {
+  const extra = createNode('extra-team', 'Extra team', undefined, '', '#277b72', 'people');
+  const ordered = { ...allocated, children: [...allocated.children, extra] };
+  const reordered = movePart(ordered, extra.id, 'up');
+  const document = { root: reordered, pathIds: mixedDocument.pathIds };
+  assert.deepEqual(reordered.children.map(child => child.id), ['extra-team', 'department']);
+  assert.equal(reordered.children[0].icon, 'people');
+  assert.equal(reordered.children[0].color, '#277b72');
+  assert.deepEqual(reordered.children[1], allocated.children[0]);
+  assert.deepEqual(normalizeDocument(document).pathIds, mixedDocument.pathIds);
+  const collection = putDocument(emptyCollection, document);
+  assert.deepEqual(decodeCollection(encodeCollection(collection)), collection);
+});
+check('Reorder nested siblings and leave boundaries, missing parts and root unchanged', () => {
+  const nestedOrder = node('outer', 100, [node('parent', 70, [node('first', 10), node('last', 20)]), node('other', 20)]);
+  const reordered = movePart(nestedOrder, 'last', 'up');
+  assert.deepEqual(reordered.children[0].children.map(child => child.id), ['last', 'first']);
+  assert.deepEqual(reordered.children.map(child => child.id), ['parent', 'other']);
+  assert.equal(movePart(nestedOrder, 'first', 'up'), nestedOrder);
+  assert.equal(movePart(nestedOrder, 'last', 'down'), nestedOrder);
+  assert.equal(movePart(nestedOrder, 'outer', 'down'), nestedOrder);
+  assert.equal(movePart(nestedOrder, 'missing', 'down'), nestedOrder);
+});
+check('Undo and redo restore sibling order and active path', () => {
+  const document = { root, pathIds: ['root', 'a', 'nested'] };
+  let state = documentReducer(initialState, { type: 'load', document });
+  const reordered = movePart(root, 'b', 'up');
+  state = documentReducer(state, { type: 'change', document: { ...document, root: reordered }, notice: '' });
+  assert.deepEqual(state.document.pathIds, document.pathIds);
+  const undo = documentReducer(state, { type: 'undo' });
+  assert.deepEqual(undo.document, document);
+  const redo = documentReducer(undo, { type: 'redo' });
+  assert.deepEqual(redo.document.root, reordered);
+  assert.deepEqual(redo.document.pathIds, document.pathIds);
+});
+const { searchCollection, SEARCH_LIMIT } = await import(new URL('search.mjs', temp));
+let searchable = createNode('search-company', 'Компанія');
+searchable = addPart(searchable, searchable.id, createNode('search-team', 'Розробка'));
+searchable = addPart(searchable, searchable.id, createNode('search-budget', 'Бюджет офісу', 100, 'UAH'));
+searchable = addPart(searchable, 'search-budget', createNode('shared-search', 'Оренда', 40, 'UAH'));
+let secondSearch = createNode('search-month', 'Місячний бюджет', 100, 'UAH');
+secondSearch = addPart(secondSearch, secondSearch.id, createNode('shared-search', 'Оренда', 20, 'UAH'));
+const searchFixture = putDocument(putDocument(emptyCollection, { root: searchable, pathIds: [searchable.id] }), { root: secondSearch, pathIds: [secondSearch.id] });
+check('Search finds roots and nested measured/structural nodes, ignoring case and whitespace', () => {
+  assert.equal(searchCollection(searchFixture, '  БЮДЖЕТ  ').total, 2);
+  assert.equal(searchCollection(searchFixture, 'офісу бюджет').total, 1);
+  const team = searchCollection(searchFixture, 'розроб').matches[0];
+  assert.equal(team.node.mode, 'structural');
+  assert.deepEqual(team.pathIds, ['search-company', 'search-team']);
+  const rent = searchCollection(searchFixture, 'оренда');
+  assert.equal(rent.total, 2);
+  assert.deepEqual(rent.matches[0].pathIds, ['search-company', 'search-budget', 'shared-search']);
+  assert.deepEqual(rent.matches[0].pathNames, ['Компанія', 'Бюджет офісу', 'Оренда']);
+  assert.notEqual(rent.matches[0].rootId, rent.matches[1].rootId);
+  assert.equal(searchable.children[1].children[0].name, 'Оренда');
+});
+check('Search handles empty/no matches, apostrophes and result limits', () => {
+  assert.equal(searchCollection(searchFixture, '   ').total, 0);
+  assert.equal(searchCollection(searchFixture, 'неіснуюче').total, 0);
+  const family = putDocument(emptyCollection, { root: createNode('family-search', 'Сім’я'), pathIds: ['family-search'] });
+  assert.equal(searchCollection(family, "сім'я").total, 1);
+  const many = { ...createNode('many-search', 'Список'), children: Array.from({ length: SEARCH_LIMIT + 1 }, (_, i) => createNode('match-' + i, 'Збіг ' + i)) };
+  const results = searchCollection(putDocument(emptyCollection, { root: many, pathIds: [many.id] }), 'збіг');
+  assert.equal(results.total, SEARCH_LIMIT + 1);
+  assert.equal(results.matches.length, SEARCH_LIMIT);
+  assert.equal(results.matches[0].node.id, 'match-0');
+});
+check('Opening search results selects the correct whole/path atomically without adding history', () => {
+  let state = documentReducer(initialState, { type: 'load', collection: searchFixture });
+  const match = searchCollection(searchFixture, 'оренда').matches[0];
+  const past = state.past;
+  state = documentReducer(state, { type: 'open', id: match.rootId, pathIds: match.pathIds });
+  assert.equal(state.document.root.id, 'search-company');
+  assert.deepEqual(state.document.pathIds, match.pathIds);
+  assert.equal(state.past, past);
+  assert.deepEqual(decodeCollection(encodeCollection(state.collection)), state.collection);
+  assert.equal(documentReducer(state, { type: 'open', id: 'missing', pathIds: [] }), state);
+  const repaired = documentReducer(state, { type: 'open', id: match.rootId, pathIds: ['search-company', 'search-budget', 'deleted'] });
+  assert.deepEqual(repaired.document.pathIds, ['search-company', 'search-budget']);
 });
 console.log(tested + ' core scenarios passed');
 await import('./pwa.mjs');

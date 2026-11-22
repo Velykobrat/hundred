@@ -66,11 +66,12 @@ export default function NodeForm({ initialName = "", initialValue, initialColor,
     if (initialValue === undefined) { setName(""); setValue(""); }
   }
   const fieldClass = "w-full rounded-2xl border border-white/15 bg-neutral-950 px-4 py-3 text-white outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30";
+  const appearance = <><ColorSelector value={color} onChange={setColor} /><IconSelector value={icon} color={color} onChange={setIcon} /></>;
   return (
     <form noValidate onSubmit={submit} className="space-y-4">
       <div>
         <label htmlFor={`${id}-name`} className="mb-2 block text-sm text-neutral-300">{createWhole ? t("Назва") : t("Назва частини")}</label>
-        <input id={`${id}-name`} autoFocus={Boolean(onCancel)} value={name} onChange={(event) => { setName(event.target.value); setErrors((previous) => ({ ...previous, name: undefined })); }} maxLength={120} autoComplete="off" placeholder={createWhole ? t("Наприклад: Місячний бюджет") : t("Назва категорії")} className={fieldClass} aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? `${id}-name-error` : undefined} />
+        <input id={`${id}-name`} autoFocus={Boolean(onCancel)} value={name} onChange={(event) => { setName(event.target.value); setErrors((previous) => ({ ...previous, name: undefined })); }} maxLength={120} autoComplete="off" placeholder={createWhole ? t("Наприклад: Мої проєкти") : t("Назва категорії")} className={fieldClass} aria-required="true" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? `${id}-name-error` : undefined} />
         {errors.name && <p id={`${id}-name-error`} role="alert" className="mt-2 text-sm text-rose-300">{translateMessage(errors.name)}</p>}
       </div>
       {!structuralEdit && <div className="space-y-4">
@@ -80,16 +81,15 @@ export default function NodeForm({ initialName = "", initialValue, initialColor,
             <button type="button" aria-pressed={mode === "percent"} onClick={() => switchMode("percent")} className={`flex-1 rounded-lg px-3 py-2 text-sm ${mode === "percent" ? "bg-neutral-700 text-white" : "text-neutral-400 hover:text-white"}`}>{t("Відсоток, %")}</button>
           </div>}
           <label htmlFor={`${id}-value`} className="mb-2 block text-sm text-neutral-300">{optional ? t("Кількість — необов’язково") : mode === "percent" ? t("Частка, %") : t("Обсяг{p0}", {p0: !createWhole && unitValue ? `, ${unitValue}` : ""})}</label>
-          <input id={`${id}-value`} type="text" inputMode="decimal" autoComplete="off" value={value} onChange={(event) => { setValue(event.target.value); setErrors((previous) => ({ ...previous, value: undefined })); }} placeholder={mode === "percent" ? t("Наприклад: 30") : available !== undefined ? t("До {p0}", {p0: formatNumber(available)}) : "1000"} className={fieldClass} aria-invalid={Boolean(errors.value)} aria-describedby={`${id}-value-hint${errors.value ? ` ${id}-value-error` : ""}`} />
+          <input id={`${id}-value`} type="text" inputMode="decimal" autoComplete="off" value={value} onChange={(event) => { setValue(event.target.value); setErrors((previous) => ({ ...previous, value: undefined })); }} placeholder={createWhole ? undefined : mode === "percent" ? t("Наприклад: 30") : available !== undefined ? t("До {p0}", {p0: formatNumber(available)}) : "1000"} className={fieldClass} aria-invalid={Boolean(errors.value)} aria-describedby={`${id}-value-hint${errors.value ? ` ${id}-value-error` : ""}`} />
           <p id={`${id}-value-hint`} className="mt-2 text-xs leading-relaxed text-neutral-400">{optional ? t("Не вказуй кількість, якщо створюєш структуру або список.") : mode === "percent" ? t("Від {p0}: {p1} {p2}.", {p0: parentName ? `«${parentName}»` : t("поточної категорії"), p1: formatNumber(parentValue ?? 0), p2: unitValue}) : t("Можна вводити дроби через кому або крапку.")}</p>
           {parentValue !== undefined && previewValue !== null && previewValue > 0 && <p className="mt-3 rounded-xl bg-indigo-400/10 px-3 py-2 text-sm text-indigo-200">{formatNumber(previewValue)} {unitValue} · {formatPercent(previewValue / parentValue * 100)} {" "}{t("цього рівня")}</p>}
           {errors.value && <p id={`${id}-value-error`} role="alert" className="mt-2 text-sm text-rose-300">{translateMessage(errors.value)}</p>}
         </div>
-        {optional && !structural && <UnitSelector value={unitValue} onChange={setUnitValue} fieldId={id + "-unit"} className={fieldClass} error={translateMessage(errors.unit)} />}
+        {optional && !structural && <div>{createWhole && <p className="mb-2 text-xs leading-relaxed text-neutral-400">{t("Для кількості обери одиницю виміру.")}</p>}<UnitSelector value={unitValue} onChange={setUnitValue} fieldId={id + "-unit"} className={fieldClass} error={translateMessage(errors.unit)} /></div>}
       </div>}
       {(structuralEdit || initialValue !== undefined) && <p className="text-xs text-neutral-400">{t("Тип цілого після створення не змінюється.")}</p>}
-      <ColorSelector value={color} onChange={setColor} />
-      <IconSelector value={icon} color={color} onChange={setIcon} />
+      {createWhole ? <details className="whole-appearance"><summary>{t("Оформлення")}</summary><div className="whole-appearance-options">{appearance}</div></details> : appearance}
 
       {available === 0 && <p className="text-sm text-neutral-300">{t("Усе розподілено. Зменш або видали одну з частин, щоб звільнити місце.")}</p>}
       <div className="flex gap-3 pt-2">

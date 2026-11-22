@@ -1,0 +1,5 @@
+.library-hero { padding: 18px 0 30px; }
+.library-hero-statement { max-width: 950px; margin: 0; font-size: clamp(27px, 3.8vw, 44px); line-height: 1.2; letter-spacing: -.035em; color: var(--foreground); text-wrap: balance; }
+.library-hero-statement strong { font-weight: 550; }
+.library-hero-statement strong > span:not(.library-hero-tail) { color: var(--accent-text); }
+.library-hero-statement .library-hero-tail { display: block; margin-top: 10px; max-width: 780px; color: var(--muted); font-size: clamp(17px, 2vw, 23px); line-height: 1.5; letter-spacing: -.015em; font-weight: 400; }
