@@ -45,7 +45,10 @@ export default function ResourceLibrary({ collection, onOpen, onOpenResult, onCr
       {full && <p className="parts-note">{t("Збережено всі")}{" "}{MAX_DOCUMENTS} {" "}{t("цілих. Щоб додати нове, видали одне з наявних.")}</p>}
     </> : <div className="library-empty surface">
       <h2>{t("Тут поки немає цілих.")}</h2>
-      <p>{t("Створи ціле з кількістю або без неї.")}</p>
+      <div className="library-empty-copy">
+        <p>{t("Ціле — це те, що ти хочеш описати: команда, проєкт, бюджет або час.")}</p>
+        <p>{t("Без кількості — структура чи список. З кількістю та одиницею — пропорційні частини.")}</p>
+      </div>
       <button type="button" className="primary-button" onClick={onCreate}><Icon name="plus" />{t("Створити перше ціле")}</button>
       <button type="button" className="text-button" onClick={onImport}>{t("Маю резервну копію")}</button>
     </div>}

@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const temp = new URL('./.cache/', import.meta.url);
 mkdirSync(temp, { recursive: true });
-for (const name of ['search', 'i18n', 'node-icon', 'node-color', 'node-mode', 'tree', 'document', 'history', 'treemap', 'collection', 'percentage']) {
+for (const name of ['search', 'i18n', 'backup-reminder', 'node-icon', 'node-color', 'node-mode', 'tree', 'document', 'history', 'treemap', 'collection', 'percentage']) {
   const source = readFileSync(new URL(`../src/lib/${name}.ts`, import.meta.url), 'utf8');
   const js = stripTypeScriptTypes(source).replace(/from "\.\/(node-icon|node-color|node-mode|tree|document|collection|percentage)"/g, 'from "./$1.mjs"');
   writeFileSync(new URL(`${name}.mjs`, temp), js);
@@ -429,6 +429,34 @@ check('Opening search results selects the correct whole/path atomically without 
   assert.equal(documentReducer(state, { type: 'open', id: 'missing', pathIds: [] }), state);
   const repaired = documentReducer(state, { type: 'open', id: match.rootId, pathIds: ['search-company', 'search-budget', 'deleted'] });
   assert.deepEqual(repaired.document.pathIds, ['search-company', 'search-budget']);
+});
+const { BACKUP_INTERVAL_MS, REMIND_LATER_MS, decodeBackupReminder, shouldRemindBackup, postponeBackupReminder, recordBackup } = await import(new URL('backup-reminder.mjs', temp));
+check('Backup reminder requires a saved Whole and respects a seven-day postponement', () => {
+  const now = 1_800_000_000_000;
+  const initial = decodeBackupReminder(null);
+  assert.equal(shouldRemindBackup(0, initial, now), false);
+  assert.equal(shouldRemindBackup(1, initial, now), true);
+  const later = postponeBackupReminder(initial, now);
+  assert.equal(later.lastBackupAt, null);
+  assert.equal(shouldRemindBackup(1, later, now + REMIND_LATER_MS - 1), false);
+  assert.equal(shouldRemindBackup(1, later, now + REMIND_LATER_MS), true);
+});
+check('An initiated backup suppresses reminders for thirty days and survives metadata roundtrip', () => {
+  const now = 1_800_000_000_000;
+  const backup = recordBackup(now);
+  assert.deepEqual(decodeBackupReminder(JSON.stringify(backup)), { lastBackupAt: now, remindAfter: null });
+  assert.equal(shouldRemindBackup(1, backup, now + BACKUP_INTERVAL_MS - 1), false);
+  assert.equal(shouldRemindBackup(1, backup, now + BACKUP_INTERVAL_MS), true);
+  assert.equal(shouldRemindBackup(0, backup, now + BACKUP_INTERVAL_MS), false);
+  const later = postponeBackupReminder(backup, now + BACKUP_INTERVAL_MS - REMIND_LATER_MS + 1);
+  assert.equal(shouldRemindBackup(1, later, now + BACKUP_INTERVAL_MS), false);
+});
+check('Malformed backup reminder metadata falls back safely', () => {
+  const empty = { lastBackupAt: null, remindAfter: null };
+  for (const raw of ['{', 'null', '[]', '"text"', '{"lastBackupAt":-1,"remindAfter":"later"}', '{"lastBackupAt":1e100,"remindAfter":1.5}']) {
+    assert.deepEqual(decodeBackupReminder(raw), empty);
+    assert.equal(shouldRemindBackup(1, decodeBackupReminder(raw), 1_800_000_000_000), true);
+  }
 });
 console.log(tested + ' core scenarios passed');
 await import('./pwa.mjs');

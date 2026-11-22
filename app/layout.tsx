@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   icons: { apple: "/pwa-192.png" },
-  title: "Hundred — побач свої цілі",
+  title: "Hundred — ціле та частини",
   description: "Hundred — система опису Цілого через Частини, де кожна Частина може стати новим Цілим.",
 };
 

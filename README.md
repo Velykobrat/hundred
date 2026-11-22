@@ -1,97 +1,138 @@
 # Hundred
 
-**Hundred — система опису Цілого через Частини, де кожна Частина може стати новим Цілим.**
+**Break a whole into parts.**
 
-Створи Ціле, за бажанням задай вимірювану кількість, поділи його на Частини та відкрий будь-яку Частину як нове Ціле.
+Hundred is a system for describing a Whole through Parts, where every Part can become a new Whole. Use it to explore a team, project, budget, time, or anything else with parts.
 
-**ЦІЛЕ → ЧАСТИНИ → НОВЕ ЦІЛЕ → ЧАСТИНИ → …**
+[Open Hundred](https://hundred-pearl-ten.vercel.app) · [Screenshot capture guide](docs/screenshots/README.md) · [PWA documentation](docs/pwa.md)
 
-[Відкрити Hundred](https://hundred-pearl-ten.vercel.app)
+> **Українською:** Hundred допомагає описати ціле через частини. Кожну частину можна відкрити як нове ціле.
 
-## Дві форми цілого
+![Hundred home screen with Company, Monthly Budget, and Week saved Wholes](docs/screenshots/home-saved-wholes.png)
 
-**Вимірюване ціле** має додатну кількість та одиницю: бюджет 50 000 грн, тиждень 168 год, квартира 80 m². Частини вводяться як обсяг або відсоток поточного цілого. Вони мають ту саму одиницю, а їхня сума не перевищує ціле. Пропорційна карта показує частини та залишок.
+## How it works
 
-**Структурне ціле** потребує лише назви: компанія, команда, проєкт або список. Залиш кількість порожньою. Частини показано рівними картками або компактним списком, без штучних відсотків чи залишку. Видно кількість прямих частин, усіх вкладених частин та рівнів. Внутрішня вага структурного вузла за замовчуванням дорівнює 1.
+**Whole → Parts → New Whole**
 
-Тип задається для кожного вузла окремо. Наприклад: Компанія (структура) → Відділ (структура) → Бюджет відділу (100 000 грн) → Оренда (40 000 грн). Структурне ціле може містити обидва типи частин. Вимірюване ціле містить лише вимірювані частини з тією самою одиницею.
+Create a Whole, add Parts, and open any Part to explore or add its own Parts. For example, a team can contain departments; each department can become a Whole containing its members. Navigate back to a parent or use **Levels** to move through the hierarchy.
 
-## Як користуватися
+## Two kinds of Whole
 
-1. Натисни **«Нове ціле»**, введи назву. Кількість необов’язкова.
-2. Якщо кількість задана, обери одиницю зі списку або **«Своя одиниця»**. Одиниці зберігаються як довільні рядки; готовий список лише допомагає введенню.
-3. Натисни **«Додати частину»**. У структурі достатньо назви; можна додати кількість та власну одиницю. У вимірюваному цілому введи обсяг або відсоток.
-4. Відкрий будь-яку частину як нове ціле. Навігація зберігає шлях та дозволяє переходити до предків і сусідніх частин.
-5. Меню **«⋯»** дозволяє редагувати, копіювати ціле або видаляти. Верхня панель скасовує та повторює зміни.
+### Structural Whole
 
-У меню частини дії **«Перемістити вище / нижче»** змінюють її порядок серед сусідніх частин. Порядок зберігається в дереві, використовується в картках, списку та карті й підтримує undo/redo.
+A Structural Whole needs only a name. Use one for a hierarchy, list, organization, or project structure. Its Parts can be structural or measured, and quantity is optional. Switch between cards and a list without changing the data.
 
-Пошук на головній знаходить цілі та вкладені частини за назвою в усіх збережених деревах. Результат показує шлях, а натискання відкриває потрібну частину зі збереженням навігації. Пошук працює локально, без інтернету; великі списки результатів обмежено першими 100 збігами з підказкою уточнити запит.
+### Measured Whole
 
-Редагування зберігає тип вузла: структурному можна змінити назву, вимірюваному — назву та кількість із перевіркою вкладених частин і доступного обсягу батька. Зміна типу та одиниці вже створеного вузла в цій версії не підтримується.
+A Measured Whole has a positive quantity and a unit, such as a budget of 50,000 UAH or a week of 168 hours. Its Parts use the same unit and can be entered as amounts or percentages. Their total cannot exceed the Whole. A proportional treemap shows the Parts and remaining capacity; open a Part to divide it further.
 
-Під час створення або редагування можна вибрати один із 12 кольорів та 15 значків. Автоматичний колір і стандартний значок залишають попередню поведінку. Оформлення зберігається як необов’язкові атрибути вузла у форматі v3, переноситься через резервні копії та підтримує undo/redo. Значки можна вибирати клавіатурою; активний підсвічується обраним кольором.
+A Structural Whole can contain another Structural Whole or a Measured Whole. For example: **Organization → Department → Department budget → Rent**. A Measured Whole contains measured Parts with the same unit.
 
-Для структурних цілих перемикач **«Картки / Список»** змінює лише подання. Обраний вигляд зберігається з налаштуваннями браузера та не впливає на дерево чи історію змін. Вимірювані цілі продовжують використовувати пропорційну карту.
+## Key features
 
-Вкладки **«Головна»**, **«Ціле»**, **«Налаштування»** та відкритий шлях відновлюються після перезавантаження. Українська/англійська мова та темна/світла/системна тема зберігаються окремо. Назви та одиниці користувача не перекладаються. На ПК карта та список розташовані поруч; на телефоні список під картою. Форми доступні з клавіатури.
+- Nested Wholes and Parts, with navigation to ancestors and neighboring Parts.
+- Structural cards or lists and a proportional treemap for measured Parts.
+- Local search across saved Wholes and nested Parts, with paths to results.
+- Sibling reordering, editing, duplication of a Whole, and undo/redo.
+- Optional colors and icons; keyboard-accessible forms and navigation.
+- Local-first autosave, JSON backup/import, and offline PWA support.
+- Ukrainian and English interface; light, dark, and system themes.
 
-## Збереження та резервні копії
+## Screenshots
 
-Дані автоматично зберігаються у localStorage поточного браузера та домену. Облікового запису, серверної бази й синхронізації між пристроями немає. Для перенесення або захисту від очищення браузера завантаж JSON-копію в налаштуваннях.
+### Structural Whole
 
-Поточний формат збереження й експорту — **v3**, з явним типом кожного вузла. Підтримуються **v1 → v3**, **v2 → v3**, **v3 → v3**. Усі старі вузли стають вимірюваними; значення, одиниці, ідентифікатори, ієрархія, активне ціле та коректний шлях зберігаються. Некоректний шлях обрізається до останнього наявного предка.
+Marketing is opened as a Whole within Company, with Content and Social Media as its Parts.
 
-Ключ сховища `hundred.document.v1` залишено для сумісності: старі дані читаються без перенесення вручну; наступне збереження пише v3. Некоректні дані не перезаписуються автоматично. Імпорт додає незалежні копії з новими ідентифікаторами та не замінює наявні цілі.
+![Marketing opened within Company, showing its structural Parts without quantities](docs/screenshots/structural-whole.png)
 
-Введений відсоток перетворюється на абсолютну кількість. Зміна кількості батька не перераховує частини автоматично.
+### Measured Whole
 
-## Технічні межі
+Monthly Budget shows measured Parts, a proportional treemap, and the remaining amount.
 
-До 20 цілих, 5 000 вузлів і 41 рівня в одному дереві. Вимірювані кількості — понад нуль, до 1 000 000 000, з точністю до 6 знаків після коми; допускаються кома та крапка. Назва — до 120 символів, одиниця — до 20. Файл імпорту — до 4 МБ; фактична місткість localStorage залежить від браузера.
+![Monthly Budget showing measured Parts, 80 percent allocated, and 10,000 UAH available](docs/screenshots/measured-whole.png)
+
+### Mobile
+
+The Week Whole and its proportional Parts adapt to a narrow screen.
+
+<img src="docs/screenshots/mobile-whole.png" alt="Week Whole on mobile, showing its Parts and remaining hours" width="360">
+
+## Why Hundred?
+
+Lists and quantities often sit at different levels of the same idea. Hundred lets a named structure and a measured amount live in the same hierarchy, without forcing a quantity onto every Part. Each Part can become the starting point for a closer look.
+
+## Local-first and offline
+
+No account or backend is required. Wholes, navigation, and preferences are stored in the current browser on the current origin; there is no automatic cloud synchronization. Export a JSON backup before clearing browser data or moving to another device. Import adds independent copies rather than replacing existing Wholes.
+
+When at least one Whole exists, Home may show a non-blocking backup reminder. **Remind me later** postpones it for seven days; starting a backup download suppresses it for 30 days. Reminder timestamps are stored separately from the Wholes in the same browser and shared with other open tabs. A started download does not guarantee that the file was saved successfully.
+
+The production PWA can work offline after its service worker and app assets have completed an initial online installation. An installable app shortcut is optional and browser support varies. A first page load alone does not guarantee the offline installation has finished; private browsing, storage eviction, clearing site data, or a different origin can affect availability. The cache is not a backup of your data.
+
+Updates download in the background and wait until all Hundred tabs and windows close. Development mode does not register a service worker. See the [PWA guide](docs/pwa.md) for installation requirements, cache policy, limitations, and manual offline/update checks.
+
+## Data format and migration
+
+The current storage and export format is **v3**, with an explicit structural or measured type on each node. The app accepts **v1 → v3**, **v2 → v3**, and **v3 → v3**: legacy nodes become measured, while values, units, IDs, hierarchy, active Whole, and valid navigation paths are retained. Invalid paths are shortened to the last existing ancestor.
+
+The localStorage key `hundred.document.v1` is retained for compatibility; existing data is read without manual migration and the next save writes v3. Invalid saved data is not overwritten automatically. Imported Wholes receive new IDs. Undo/redo history is in memory and does not persist across reloads.
+
+A percentage entered for a measured Part is converted to an absolute amount. Changing its parent's quantity does not automatically recalculate its Parts. Editing preserves a node's type and unit; changing either after creation is not currently supported. Colors and icons are optional v3 attributes and are included in backups and undo/redo.
+
+## Technical limits
+
+- Up to **20 Wholes**, and **5,000 nodes** and **41 levels** per tree.
+- Measured values must be greater than zero and at most **1,000,000,000**, with up to **6 decimal places**; a comma or dot is accepted as the decimal separator.
+- Names are limited to **120 characters**, units to **20 characters**, and imported backup files to **4 MB**. Browser storage capacity varies.
+- Search shows up to **100 results** and prompts for a more specific query when there are more.
 
 ## Development
 
-Hundred lets a user create a **Whole**, optionally give it a measurable quantity, split it into **Parts**, and open every Part as a new Whole. Structural wholes need only a name; measured wholes have capacity and arbitrary units. Mixed hierarchies are supported beneath structural parents.
-
-Stack: Next.js 16, React 19, TypeScript, Tailwind CSS 4. Use Node.js 24.
+The app uses **Next.js 16.4.6**, **React 19**, **TypeScript**, and **Tailwind CSS 4**. Use Node.js 24.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). Data created there belongs to that browser and origin; it is separate from the deployed app.
+
+## Architecture overview
+
+- `src/types/node.ts` defines the discriminated Structural/Measured Node union.
+- `src/lib/node-mode.ts`, `tree.ts`, and `document.ts` implement node modes, traversal, validation, tree edits, and the document codec.
+- `src/lib/collection.ts`, `history.ts`, and `use-document.ts` handle collections, migration, backups, history, and local persistence.
+- `src/components/` contains forms, navigation, structural views, the measured treemap, and local search.
+- `src/lib/i18n.ts` provides Ukrainian and English UI text; `app/page.tsx` connects the workspace.
+- `src/pwa/worker.js` and `scripts/build-pwa.mjs` define and generate the service worker and offline shell.
+
+## Testing
 
 ```sh
-node tests/core.mjs
+npm test
 npm run lint
 npm run build
 ```
 
-Core tests cover measured precision/capacity, structural and mixed trees, v1/v2 migration, v3 roundtrips, import/export, ID regeneration, deletion, path repair, and undo/redo.
+Core tests cover structural and measured trees, precision and capacity, navigation, search, editing, history, import/export, and migrations. PWA tests cover worker behavior and build output; browser installation, storage eviction, and update lifecycle still require [manual PWA QA](docs/pwa.md#manual-qa-production-build).
 
-- `src/types/node.ts`: discriminated measured/structural node union.
-- `src/lib/node-mode.ts`: type guards and layout weight.
-- `src/lib/tree.ts`: traversal, parent lookup, descendants and levels.
-- `src/lib/document.ts`: creation, validation, tree edits, document codec.
-- `src/lib/collection.ts`: collections, migration, backups and copies.
-- `src/lib/history.ts`, `use-document.ts`: history and persistence.
-- `src/components/`: forms, metadata, navigation, measured treemap and structural cards.
-- `src/lib/i18n.ts`: Ukrainian/English UI.
-- `app/page.tsx`: workspace integration.
-- `tests/core.mjs`: core regression scenarios.
+The Vercel build command runs tests, lint, and the production build through `vercel.json`.
 
-Vercel runs tests, lint and production build before deployment using `vercel.json`.
+### Browser E2E tests
 
-## Offline / PWA
+Install Playwright's Chromium headless browser once, build the current app, then run the suite:
 
-Production builds include an offline app shell and a Web App Manifest. After one
-completed online service-worker installation, Home, Whole, Settings and local
-editing/backup workflows can run offline. Install using the browser's menu where
-supported. Local data still uses the existing v3 localStorage format.
+```sh
+npx playwright install --only-shell chromium
+npm run build
+npm run test:e2e
+```
 
-Updates download in the background and wait until all Hundred tabs/windows close;
-a small notice explains when an update is ready. Development mode does not register
-the worker. See [PWA implementation and manual QA](docs/pwa.md) for cache policy,
-installation requirements, limitations and the complete online/offline/update test.
+Playwright starts the production server on `127.0.0.1:3217`; this port must be free. Rebuild after changing app code so the suite tests the current version. Each test uses its own browser context, isolated from your browser and other tests. The Chromium suite covers onboarding, structural and measured Wholes, validation, editing, deletion, undo/redo, persistence, language, theme, and a mobile viewport.
+
+The suite blocks service workers and does not test offline behavior, browser installation, or update lifecycle. Those remain covered by the existing mocked PWA tests and [manual PWA QA](docs/pwa.md#manual-qa-production-build). The browser suite is not part of the Vercel deployment command; a separate CI job can install Chromium, build, and run it when desired.
+
+## License
+
+Copyright © 2026 Vitalii. All rights reserved. Hundred's source code is available for portfolio viewing and review; other use requires permission, subject to applicable law and GitHub's Terms of Service. Third-party dependencies have their own licenses. See [LICENSE](LICENSE) for details.

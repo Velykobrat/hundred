@@ -1,0 +1,212 @@
+{
+  "version": 3,
+  "documents": [
+    {
+      "root": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "name": "Company",
+        "color": "#555ab5",
+        "icon": "people",
+        "mode": "structural",
+        "weight": 1,
+        "children": [
+          {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "name": "Development",
+            "color": "#3b6b9d",
+            "icon": "project",
+            "mode": "structural",
+            "weight": 1,
+            "children": [
+              {
+                "id": "00000000-0000-4000-8000-000000000003",
+                "name": "Frontend",
+                "mode": "structural",
+                "weight": 1,
+                "children": []
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000004",
+                "name": "Backend",
+                "mode": "structural",
+                "weight": 1,
+                "children": []
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000005",
+                "name": "QA",
+                "mode": "structural",
+                "weight": 1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000006",
+            "name": "Marketing",
+            "color": "#9b5075",
+            "icon": "globe",
+            "mode": "structural",
+            "weight": 1,
+            "children": [
+              {
+                "id": "00000000-0000-4000-8000-000000000007",
+                "name": "Content",
+                "mode": "structural",
+                "weight": 1,
+                "children": []
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000008",
+                "name": "Social Media",
+                "mode": "structural",
+                "weight": 1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000009",
+            "name": "Operations",
+            "color": "#8d692e",
+            "icon": "briefcase",
+            "mode": "structural",
+            "weight": 1,
+            "children": [
+              {
+                "id": "00000000-0000-4000-8000-000000000010",
+                "name": "Finance",
+                "mode": "structural",
+                "weight": 1,
+                "children": []
+              },
+              {
+                "id": "00000000-0000-4000-8000-000000000011",
+                "name": "Support",
+                "mode": "structural",
+                "weight": 1,
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      "pathIds": [
+        "00000000-0000-4000-8000-000000000001"
+      ]
+    },
+    {
+      "root": {
+        "id": "00000000-0000-4000-8000-000000000012",
+        "name": "Monthly Budget",
+        "color": "#347b5c",
+        "icon": "money",
+        "mode": "measured",
+        "value": 50000,
+        "unit": "UAH",
+        "children": [
+          {
+            "id": "00000000-0000-4000-8000-000000000013",
+            "name": "Housing",
+            "color": "#555ab5",
+            "icon": "home",
+            "mode": "measured",
+            "value": 18000,
+            "unit": "UAH",
+            "children": []
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000014",
+            "name": "Food",
+            "color": "#277b72",
+            "icon": "coffee",
+            "mode": "measured",
+            "value": 10000,
+            "unit": "UAH",
+            "children": []
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000015",
+            "name": "Transport",
+            "color": "#a3623d",
+            "icon": "globe",
+            "mode": "measured",
+            "value": 5000,
+            "unit": "UAH",
+            "children": []
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000016",
+            "name": "Savings",
+            "color": "#7557a5",
+            "icon": "star",
+            "mode": "measured",
+            "value": 7000,
+            "unit": "UAH",
+            "children": []
+          }
+        ]
+      },
+      "pathIds": [
+        "00000000-0000-4000-8000-000000000012"
+      ]
+    },
+    {
+      "root": {
+        "id": "00000000-0000-4000-8000-000000000017",
+        "name": "Week",
+        "color": "#317c91",
+        "icon": "clock",
+        "mode": "measured",
+        "value": 168,
+        "unit": "h",
+        "children": [
+          {
+            "id": "00000000-0000-4000-8000-000000000018",
+            "name": "Work",
+            "color": "#555ab5",
+            "icon": "briefcase",
+            "mode": "measured",
+            "value": 40,
+            "unit": "h",
+            "children": []
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000019",
+            "name": "Sleep",
+            "color": "#7557a5",
+            "icon": "coffee",
+            "mode": "measured",
+            "value": 56,
+            "unit": "h",
+            "children": []
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000020",
+            "name": "Study",
+            "color": "#277b72",
+            "icon": "book",
+            "mode": "measured",
+            "value": 14,
+            "unit": "h",
+            "children": []
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000021",
+            "name": "Family",
+            "color": "#9b5075",
+            "icon": "people",
+            "mode": "measured",
+            "value": 21,
+            "unit": "h",
+            "children": []
+          }
+        ]
+      },
+      "pathIds": [
+        "00000000-0000-4000-8000-000000000017"
+      ]
+    }
+  ],
+  "activeId": "00000000-0000-4000-8000-000000000001"
+}

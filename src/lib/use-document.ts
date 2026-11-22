@@ -26,7 +26,7 @@ export function useDocument() {
         dispatch({ type: "load", collection, notice: "Дані оновлено в іншій вкладці. Історію дій очищено." });
       } catch {
         blockedStorage.current = true;
-        dispatch({ type: "storage", error: "Інша вкладка записала некоректні дані. Автозбереження призупинено; поточні розподіли залишилися." });
+        dispatch({ type: "storage", error: "Інша вкладка записала некоректні дані. Автозбереження призупинено; поточні цілі залишилися." });
       }
     };
     window.addEventListener("storage", onStorage);
@@ -58,7 +58,7 @@ export function useDocument() {
   };
   const importCollection = (incoming: Collection) => {
     try {
-      return send({ type: "replace", collection: appendImported(stateRef.current.collection, incoming, () => crypto.randomUUID()), notice: `Імпортовано розподілів: ${incoming.documents.length}. Попередні розподіли залишилися.` });
+      return send({ type: "replace", collection: appendImported(stateRef.current.collection, incoming, () => crypto.randomUUID()), notice: `Імпортовано цілих: ${incoming.documents.length}. Попередні цілі залишилися.` });
     } catch (error) { return error instanceof Error ? error.message : "Не вдалося імпортувати копію."; }
   };
 

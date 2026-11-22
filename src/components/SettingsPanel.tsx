@@ -42,6 +42,6 @@ export default function SettingsPanel({ count, storageError, canExport, onExport
       </div>
     </section>
     <BeginnerGuide />
-    <p className="settings-footnote">{t("Очищення даних сайту видалить локальні цілі. Імпорт додає копії та зберігає наявні розподіли.")}</p>
+    <p className="settings-footnote">{t("Очищення даних сайту видалить локальні цілі. Імпорт додає копії та зберігає наявні цілі.")}</p>
   </section>;
 }

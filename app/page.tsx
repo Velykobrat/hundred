@@ -13,6 +13,7 @@ import { findNodeById, countDescendants as countParts, findParent, movePart } fr
 import { addPart, createNode, deletePart, editPart, remaining, sumValues, units } from "../src/lib/document";
 import { encodeCollection, MAX_DOCUMENTS } from "../src/lib/collection";
 import { useDocument } from "../src/lib/use-document";
+import { useBackupReminder } from "../src/lib/use-backup-reminder";
 import { useScreen } from "../src/lib/use-screen";
 import BottomNavigation, { type Screen } from "../src/components/BottomNavigation";
 import ResourceLibrary from "../src/components/ResourceLibrary";
@@ -25,10 +26,12 @@ import Modal from "../src/components/Modal";
 import Treemap from "../src/components/Treemap";
 import StructureViewToggle from "../src/components/StructureViewToggle";
 import ImportBackup from "../src/components/ImportBackup";
+import BackupReminder from "../src/components/BackupReminder";
 
 function Workspace() {
   const { t, formatNumber, formatPercent, translateMessage, structureView } = usePreferences();
   const workspace = useDocument();
+  const backupReminder = useBackupReminder(workspace.collection.documents.length);
   const { root, pathIds } = workspace.document;
   const [screen, setScreen] = useScreen();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -44,6 +47,7 @@ function Workspace() {
   const partsCount = useMemo(() => root ? countParts(root) : 0, [root]);
   const editing = root && editingId ? findNodeById(root, editingId) : null;
   const deleting = root && deletingId ? findNodeById(root, deletingId) : null;
+  const deletingParent = root && deleting ? findParent(root, deleting.id) : null;
   const actionNode = root && actionsId ? findNodeById(root, actionsId) : null;
   const actionParent = root && actionNode ? findParent(root, actionNode.id) : null;
   const actionIndex = actionParent?.children.findIndex(child => child.id === actionNode?.id) ?? -1;
@@ -94,20 +98,29 @@ function Workspace() {
     goToScreen("resource");
   }
   function downloadBackup() {
-    let data = encodeCollection(workspace.collection);
-    if (!workspace.collection.documents.length && workspace.storageError) {
-      try { data = localStorage.getItem("hundred.document.v1") ?? data; } catch { /* Preserve the export option when storage is inaccessible. */ }
+    try {
+      let data = encodeCollection(workspace.collection);
+      if (!workspace.collection.documents.length && workspace.storageError) {
+        try { data = localStorage.getItem("hundred.document.v1") ?? data; } catch { /* Preserve the export option when storage is inaccessible. */ }
+      }
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      try {
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "hundred-backup.json";
+        link.click();
+        if (workspace.collection.documents.length > 0) backupReminder.backupStarted();
+        setActionError("");
+      } finally {
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch {
+      setActionError(t("Не вдалося розпочати завантаження резервної копії."));
     }
-    const blob = new Blob([data], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "hundred-backup.json";
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  if (!workspace.ready) return <main className="flex min-h-screen items-center justify-center bg-neutral-950 p-6 text-neutral-300" role="status">{t("Відновлюю твій розподіл…")}</main>;
+  if (!workspace.ready) return <main className="flex min-h-screen items-center justify-center bg-neutral-950 p-6 text-neutral-300" role="status">{t("Відновлюю твої цілі…")}</main>;
 
   return (
     <main className="hundred-app min-h-screen px-4 py-5 text-white sm:px-8 sm:py-8">
@@ -128,13 +141,16 @@ function Workspace() {
           {actionError && <p role="alert" className="mt-2 text-sm text-rose-300">{translateMessage(actionError)}</p>}
         </div>}
 
-        {screen === "home" && <ResourceLibrary collection={workspace.collection} onOpen={selectDocument} onOpenResult={openSearchResult} onCreate={() => selectDocument(null)} onImport={() => setImporting(true)} />}
+        {screen === "home" && <>
+          {backupReminder.visible && <BackupReminder onDownload={downloadBackup} onLater={backupReminder.remindLater} />}
+          <ResourceLibrary collection={workspace.collection} onOpen={selectDocument} onOpenResult={openSearchResult} onCreate={() => selectDocument(null)} onImport={() => setImporting(true)} />
+        </>}
 
         {screen === "settings" && <SettingsPanel count={workspace.collection.documents.length} storageError={workspace.storageError} canExport={workspace.collection.documents.length > 0 || Boolean(workspace.storageError)} onExport={downloadBackup} onImport={() => setImporting(true)} />}
 
         {screen === "resource" && (!root ? (
           <section className="create-resource">
-            <header className="screen-heading"><p className="eyebrow">{t("Почни з цілого")}</p><h1>{t("Нове ціле")}</h1><p>{t("Створи ціле з кількістю або без неї.")}</p></header>
+            <header className="screen-heading"><p className="eyebrow">{t("Почни з цілого")}</p><h1>{t("Нове ціле")}</h1><p>{t("Назви ціле, наприклад команду, проєкт, бюджет або час.")}</p></header>
             {workspace.collection.documents.length >= MAX_DOCUMENTS ? <div className="surface p-6"><p>{t("Збережено всі")}{" "}{MAX_DOCUMENTS} {" "}{t("цілих. Звільни місце, перш ніж створювати нове.")}</p><button type="button" className="primary-button mt-5" onClick={() => goToScreen("home")}>{t("Мої цілі")}</button></div> : <div className="surface p-5 sm:p-7">
               <NodeForm createWhole submitLabel={t("Створити ціле")} onCancel={() => goToScreen("home")} onSubmit={(name, value, unit, color, icon) => {
                 const newRoot = createNode(crypto.randomUUID(), name, value, unit, color, icon);
@@ -197,7 +213,7 @@ function Workspace() {
 
         {adding && current && root && <Modal title={t("Додати частину")} onClose={() => setAdding(false)}>
           {isMeasuredNode(current) && <p className="mb-5 text-sm text-neutral-400">{t("Доступно")}{" "}{formatNumber(free)} {current.unit}</p>}
-          {atLimit ? <p className="text-sm text-amber-300">{t("Досягнуто межі розміру розподілу. Відредагуй наявні частини.")}</p> :
+          {atLimit ? <p className="text-sm text-amber-300">{t("Досягнуто межі розміру цілого. Відредагуй наявні частини.")}</p> :
             <NodeForm key={current.id} optionalQuantity={!isMeasuredNode(current)} unit={isMeasuredNode(current) ? current.unit : ""} available={isMeasuredNode(current) ? free : undefined} parentValue={isMeasuredNode(current) ? current.value : undefined} parentName={current.name} submitLabel={t("Додати частину")} onCancel={() => setAdding(false)} onSubmit={(name, value, unit, color, icon) => {
               const child = createNode(crypto.randomUUID(), name, value, isMeasuredNode(current) ? current.unit : unit, color, icon);
               const nextRoot = addPart(root, current.id, child);
@@ -238,7 +254,7 @@ function Workspace() {
         }} onClose={() => setImporting(false)} />}
 
         {deleting && root && <Modal title={t("Видалити «{p0}»?", {p0: deleting.name})} onClose={() => setDeletingId(null)}>
-          <p className="leading-relaxed text-neutral-300">{isMeasuredNode(deleting) && <>{t("Буде звільнено")}{" "}{formatNumber(deleting.value)} {deleting.unit}.</>}
+          <p className="leading-relaxed text-neutral-300">{isMeasuredNode(deleting) && deletingParent && isMeasuredNode(deletingParent) && <>{t("Буде звільнено")}{" "}{formatNumber(deleting.value)} {deleting.unit}.</>}
             {countParts(deleting) > 0 && t(" Також буде видалено вкладені частини: {p0}.", {p0: countParts(deleting)})} {" "}{t("Дію можна скасувати кнопкою «Скасувати» у верхній панелі.")}{" "}</p>
           <div className="mt-6 flex justify-end gap-3">
             <button type="button" autoFocus onClick={() => setDeletingId(null)} className="rounded-2xl border border-white/15 px-4 py-3 text-sm">{t("Залишити")}</button>
