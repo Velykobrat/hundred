@@ -9,8 +9,15 @@ export default function Modal({ title, children, onClose, variant = "dialog" }: 
   const titleId = useId();
   useEffect(() => {
     const element = dialog.current;
-    if (element && !element.open) element.showModal();
-    return () => element?.close();
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (element && !element.open) {
+      element.showModal();
+      element.querySelector<HTMLElement>("[data-dialog-initial-focus]")?.focus();
+    }
+    return () => {
+      element?.close();
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+    };
   }, []);
   return <dialog ref={dialog} aria-labelledby={titleId} onCancel={(event) => { event.preventDefault(); onClose(); }} className={`hundred-modal ${variant === "sheet" ? "hundred-sheet" : ""} m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-[28px] border border-white/15 bg-neutral-900 p-6 text-white shadow-2xl backdrop:bg-black/75`}>
     <div className="mb-6 flex items-start justify-between gap-4">

@@ -6,6 +6,8 @@ Hundred is a system for describing a Whole through Parts, where every Part can b
 
 [Open Hundred](https://hundred-pearl-ten.vercel.app) · [Screenshot capture guide](docs/screenshots/README.md) · [PWA documentation](docs/pwa.md)
 
+[Changelog](CHANGELOG.md) · [Roadmap](ROADMAP.md) · [Release checklist](docs/release-checklist.md)
+
 > **Українською:** Hundred допомагає описати ціле через частини. Кожну частину можна відкрити як нове ціле.
 
 ![Hundred home screen with Company, Monthly Budget, and Week saved Wholes](docs/screenshots/home-saved-wholes.png)
@@ -129,9 +131,9 @@ npm run build
 npm run test:e2e
 ```
 
-Playwright starts the production server on `127.0.0.1:3217`; this port must be free. Rebuild after changing app code so the suite tests the current version. Each test uses its own browser context, isolated from your browser and other tests. The Chromium suite covers onboarding, structural and measured Wholes, validation, editing, deletion, undo/redo, persistence, language, theme, and a mobile viewport.
+Playwright starts the production server on `127.0.0.1:3217`; this port must be free. Rebuild after changing app code so the suite tests the current version. Each test uses its own browser context, isolated from your browser and other tests. The Chromium suite covers onboarding, structural and measured Wholes, validation, editing, deletion, undo/redo, persistence, language, theme, a mobile viewport, and accessibility-oriented keyboard, form, and dialog checks.
 
-The suite blocks service workers and does not test offline behavior, browser installation, or update lifecycle. Those remain covered by the existing mocked PWA tests and [manual PWA QA](docs/pwa.md#manual-qa-production-build). The browser suite is not part of the Vercel deployment command; a separate CI job can install Chromium, build, and run it when desired.
+The suite blocks service workers. It checks the backup reminder after an already loaded page goes offline, but does not test offline app loading, browser installation, or the update lifecycle. Those require the mocked PWA tests and [manual PWA QA](docs/pwa.md#manual-qa-production-build). The browser suite is not part of the Vercel deployment command; a separate CI job can install Chromium, build, and run it when desired.
 
 ## License
 

@@ -64,7 +64,7 @@ button:not(:disabled), summary { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .4; }
 button, select, summary { min-height: 44px; }
 input, select { font-size: 16px; }
-button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+button:focus-visible, a:focus-visible, input:not([type="radio"]):focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 svg { flex-shrink: 0; }
 .hundred-app { background: var(--background); padding-bottom: calc(108px + env(safe-area-inset-bottom)); }
 .surface { border: 1px solid var(--border); border-radius: 22px; background: var(--surface); }
@@ -81,7 +81,8 @@ svg { flex-shrink: 0; }
 .app-header-caption { font-size: 11px; color: var(--subtle); text-align: right; }
 .history-controls { display: flex; gap: 6px; font-size: 23px; }
 .save-status { margin-bottom: 22px; }
-.save-status p:empty { display: none; }
+.save-status-empty { margin-bottom: 0; }
+.save-status p:empty { margin: 0; }
 .backup-reminder { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; padding: 16px; margin-bottom: 20px; }
 .backup-reminder p { flex: 1 1 260px; color: var(--secondary); font-size: 13px; line-height: 1.5; }
 .backup-reminder-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
@@ -227,7 +228,7 @@ svg { flex-shrink: 0; }
 [data-theme="light"] :is(.hundred-app, .hundred-modal) [class*="border-white/"] { border-color: var(--border-strong); }
 [data-theme="light"] :is(.hundred-app, .hundred-modal) button.bg-white { background-color: var(--primary-bg); color: var(--primary-text); }
 [data-theme="light"] :is(.hundred-app, .hundred-modal) button.bg-white:hover { background-color: var(--primary-hover); }
-:is(.hundred-app, .hundred-modal) button.bg-rose-500 { color: #fff; }
+:is(.hundred-app, .hundred-modal) button.bg-rose-500 { color: #fff; background-color: #e11d48; }
 
 .hundred-modal { overscroll-behavior: contain; }
 .hundred-modal h2 { overflow-wrap: anywhere; }

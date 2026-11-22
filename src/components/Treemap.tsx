@@ -13,7 +13,7 @@ export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: N
   const { t, formatNumber, formatPercent } = usePreferences();
   if (!isMeasuredNode(node)) return <section aria-label={t("Структура частин")} className="structural-grid">
     {node.children.map(child => <button type="button" key={child.id} className="surface structural-card" style={{ borderTop: "4px solid " + getNodeColor(child) }} onClick={() => onOpen(child)}>
-      <div className="structural-card-title">{child.icon && <Icon name={child.icon} style={{ color: getNodeColor(child) }} />}<strong>{child.name}</strong></div>{isMeasuredNode(child) && <span><NodeMetadata node={child} /></span>}
+      <span className="structural-card-title">{child.icon && <Icon name={child.icon} style={{ color: getNodeColor(child) }} />}<strong>{child.name}</strong></span>{isMeasuredNode(child) && <span><NodeMetadata node={child} /></span>}
     </button>)}
   </section>;
   const totalValue = node.value;
@@ -95,21 +95,21 @@ export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: N
                     {showFullInfo && (
                       <div className="flex h-full flex-col justify-between p-4 md:p-6">
                         <div className="flex items-start justify-between gap-3">
-                          <span className="text-sm text-white/75">
+                          <span className="text-sm">
                             {formatPercent(percent)}
                           </span>
 
-                          <span className="text-white/50 transition group-hover:translate-x-1 group-hover:-translate-y-1 group-hover:text-white">
+                          <span aria-hidden="true" className="text-white/50 transition group-hover:translate-x-1 group-hover:-translate-y-1 group-hover:text-white">
                             ↗
                           </span>
                         </div>
 
                         <div>
-                          <h2 className="break-words text-base font-medium tracking-tight md:text-xl">
+                          <span className="block break-words text-base font-medium tracking-tight md:text-xl">
                             {node.name}
-                          </h2>
+                          </span>
 
-                          <p className="mt-1 text-sm text-white/70">
+                          <p className="mt-1 text-sm">
                             {formatNumber(node.value)}{" "}
                             {node.unit}
                           </p>
@@ -119,7 +119,7 @@ export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: N
 
                     {showCompactInfo && (
                       <div className="flex h-full flex-col justify-between p-3">
-                        <span className="text-xs text-white/75">
+                        <span className="text-xs">
                           {formatPercent(percent)}
                         </span>
 

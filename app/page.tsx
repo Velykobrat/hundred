@@ -134,12 +134,12 @@ function Workspace() {
           </div> : null}
         </header>
 
-        {(workspace.storageError || workspace.notice || actionError) && <div className="save-status">
+        <div className={`save-status${workspace.storageError || workspace.notice || actionError ? "" : " save-status-empty"}`}>
           {workspace.storageError && <p role="alert" className="text-sm text-amber-300">{translateMessage(workspace.storageError)}</p>}
           {workspace.storageError && <p className="mt-2 text-xs leading-relaxed text-neutral-400">{t("Завантаж резервну копію в налаштуваннях, щоб зберегти поточні дані файлом.")}</p>}
           <p aria-live="polite" aria-atomic="true" className="mt-1 text-sm text-indigo-300">{translateMessage(workspace.notice)}</p>
           {actionError && <p role="alert" className="mt-2 text-sm text-rose-300">{translateMessage(actionError)}</p>}
-        </div>}
+        </div>
 
         {screen === "home" && <>
           {backupReminder.visible && <BackupReminder onDownload={downloadBackup} onLater={backupReminder.remindLater} />}
@@ -238,7 +238,7 @@ function Workspace() {
         {deletingWhole && root && <Modal title={t("Видалити ціле «{p0}»?", {p0: root.name})} onClose={() => setDeletingWhole(false)}>
           <p className="text-sm leading-relaxed text-neutral-300">{t("Буде видалено усе ціле разом із частинами. Інші цілі залишаться. Дію можна скасувати у верхній панелі вкладки «Ціле».")}</p>
           <div className="mt-6 flex justify-end gap-3">
-            <button type="button" autoFocus onClick={() => setDeletingWhole(false)} className="rounded-2xl border border-white/15 px-4 py-3 text-sm">{t("Залишити")}</button>
+            <button type="button" autoFocus data-dialog-initial-focus onClick={() => setDeletingWhole(false)} className="rounded-2xl border border-white/15 px-4 py-3 text-sm">{t("Залишити")}</button>
             <button type="button" onClick={() => {
               const issue = workspace.remove(root.id);
               if (issue) setActionError(issue); else goToScreen("home");
@@ -257,7 +257,7 @@ function Workspace() {
           <p className="leading-relaxed text-neutral-300">{isMeasuredNode(deleting) && deletingParent && isMeasuredNode(deletingParent) && <>{t("Буде звільнено")}{" "}{formatNumber(deleting.value)} {deleting.unit}.</>}
             {countParts(deleting) > 0 && t(" Також буде видалено вкладені частини: {p0}.", {p0: countParts(deleting)})} {" "}{t("Дію можна скасувати кнопкою «Скасувати» у верхній панелі.")}{" "}</p>
           <div className="mt-6 flex justify-end gap-3">
-            <button type="button" autoFocus onClick={() => setDeletingId(null)} className="rounded-2xl border border-white/15 px-4 py-3 text-sm">{t("Залишити")}</button>
+            <button type="button" autoFocus data-dialog-initial-focus onClick={() => setDeletingId(null)} className="rounded-2xl border border-white/15 px-4 py-3 text-sm">{t("Залишити")}</button>
             <button type="button" onClick={() => {
               const issue = workspace.change({ root: deletePart(root, deleting.id), pathIds }, t("«{p0}» видалено. Можна скасувати дію.", {p0: deleting.name}));
               if (issue) setActionError(issue);
