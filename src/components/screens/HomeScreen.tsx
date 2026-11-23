@@ -1,0 +1,11 @@
+import type { Collection } from "../../lib/collection";
+import BackupReminder from "../BackupReminder";
+import ResourceLibrary from "../ResourceLibrary";
+type Props = { collection: Collection; reminderVisible: boolean; onDownload: () => void; onRemindLater: () => void; onSelect: (id: string | null) => void; onOpenResult: (id: string, path: string[]) => void; onImport: () => void };
+export default function HomeScreen({ collection, reminderVisible, onDownload, onRemindLater, onSelect, onOpenResult, onImport }: Props) {
+  return <>
+          {reminderVisible && <BackupReminder onDownload={onDownload} onLater={onRemindLater} />}
+          <ResourceLibrary collection={collection} onOpen={onSelect} onOpenResult={onOpenResult} onCreate={() => onSelect(null)} onImport={onImport} />
+  </>;
+
+}

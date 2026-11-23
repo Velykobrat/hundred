@@ -3,33 +3,26 @@
 import { PreferencesProvider, usePreferences } from "../src/lib/use-preferences";
 
 import { useMemo, useState } from "react";
-import NodeMetadata from "../src/components/NodeMetadata";
 import PwaRegistration from "../src/components/PwaRegistration";
-import { getNodeColor } from "../src/lib/node-color";
-import { getNodeIcon } from "../src/lib/node-icon";
+import type { NodeColor } from "../src/lib/node-color";
+import type { NodeIcon } from "../src/lib/node-icon";
 import { isMeasuredNode } from "../src/lib/node-mode";
 import type { Node } from "../src/types/node";
 import { findNodeById, countDescendants as countParts, findParent, movePart } from "../src/lib/tree";
 import { addPart, createNode, deletePart, editPart, remaining, sumValues, units } from "../src/lib/document";
-import { encodeCollection, MAX_DOCUMENTS } from "../src/lib/collection";
+import { encodeCollection, type Collection } from "../src/lib/collection";
 import { useDocument } from "../src/lib/use-document";
 import { useBackupReminder } from "../src/lib/use-backup-reminder";
 import { useScreen } from "../src/lib/use-screen";
 import BottomNavigation, { type Screen } from "../src/components/BottomNavigation";
-import ResourceLibrary from "../src/components/ResourceLibrary";
 import SettingsPanel from "../src/components/SettingsPanel";
-import LevelNavigation from "../src/components/LevelNavigation";
-import PartsList from "../src/components/PartsList";
-import Icon from "../src/components/Icon";
-import NodeForm from "../src/components/NodeForm";
-import Modal from "../src/components/Modal";
-import Treemap from "../src/components/Treemap";
-import StructureViewToggle from "../src/components/StructureViewToggle";
-import ImportBackup from "../src/components/ImportBackup";
-import BackupReminder from "../src/components/BackupReminder";
+import HomeScreen from "../src/components/screens/HomeScreen";
+import CreateWholeScreen from "../src/components/screens/CreateWholeScreen";
+import WholeScreen from "../src/components/screens/WholeScreen";
+import WorkspaceDialogs from "../src/components/WorkspaceDialogs";
 
 function Workspace() {
-  const { t, formatNumber, formatPercent, translateMessage, structureView } = usePreferences();
+  const { t, translateMessage } = usePreferences();
   const workspace = useDocument();
   const backupReminder = useBackupReminder(workspace.collection.documents.length);
   const { root, pathIds } = workspace.document;
@@ -97,6 +90,55 @@ function Workspace() {
     if (issue) { setActionError(issue); return; }
     goToScreen("resource");
   }
+  function handleCreateWhole(name: string, value: number | undefined, unit: string, color?: NodeColor, icon?: NodeIcon) {
+    const newRoot = createNode(crypto.randomUUID(), name, value, unit, color, icon);
+    return workspace.change({ root: newRoot, pathIds: [newRoot.id] }, t("Ціле створено. Додай першу частину."));
+  }
+  function handleAddPart(name: string, value: number | undefined, unit: string, color?: NodeColor, icon?: NodeIcon) {
+    if (!root || !current) return;
+    const child = createNode(crypto.randomUUID(), name, value, isMeasuredNode(current) ? current.unit : unit, color, icon);
+    const nextRoot = addPart(root, current.id, child);
+    const issue = workspace.change({ root: nextRoot, pathIds }, t("Додано «{p0}».", {p0: name}));
+    if (issue) return issue;
+    setAdding(false);
+  }
+  function handleEditNode(name: string, value: number | undefined, _unit: string, color?: NodeColor, icon?: NodeIcon) {
+    if (!root || !editing) return;
+    try {
+      const nextRoot = editPart(root, editing.id, name, value, color ?? null, icon ?? null);
+      const issue = workspace.change({ root: nextRoot, pathIds }, t("Зміни до «{p0}» збережено.", {p0: name}));
+      if (issue) return issue;
+      setEditingId(null);
+    } catch (error) { return error instanceof Error ? error.message : t("Не вдалося зберегти зміни."); }
+  }
+  function handleDeleteWhole() {
+    if (!root) return;
+    const issue = workspace.remove(root.id);
+    if (issue) setActionError(issue); else goToScreen("home");
+    setDeletingWhole(false);
+  }
+  function handleDeletePart() {
+    if (!root || !deleting) return;
+    const issue = workspace.change({ root: deletePart(root, deleting.id), pathIds }, t("«{p0}» видалено. Можна скасувати дію.", {p0: deleting.name}));
+    if (issue) setActionError(issue);
+    setDeletingId(null);
+  }
+  function handleDuplicateWhole() {
+    if (!root) return;
+    const issue = workspace.duplicate(t("Копія — {name}", { name: root.name }));
+    if (issue) { setActionError(issue); setActionsId(null); } else goToScreen("resource");
+  }
+  function handleImport(incoming: Collection) {
+    const issue = workspace.importCollection(incoming);
+    if (!issue) goToScreen("resource");
+    return issue;
+  }
+  function openActionNode() {
+    if (!root || !actionNode) return;
+    const actionParent = findParent(root, actionNode.id);
+    const parentIndex = path.findIndex((node) => node.id === actionParent?.id);
+    if (parentIndex >= 0) goToPath([...path.slice(0, parentIndex + 1).map((node) => node.id), actionNode.id]);
+  }
   function downloadBackup() {
     try {
       let data = encodeCollection(workspace.collection);
@@ -141,130 +183,21 @@ function Workspace() {
           {actionError && <p role="alert" className="mt-2 text-sm text-rose-300">{translateMessage(actionError)}</p>}
         </div>
 
-        {screen === "home" && <>
-          {backupReminder.visible && <BackupReminder onDownload={downloadBackup} onLater={backupReminder.remindLater} />}
-          <ResourceLibrary collection={workspace.collection} onOpen={selectDocument} onOpenResult={openSearchResult} onCreate={() => selectDocument(null)} onImport={() => setImporting(true)} />
-        </>}
+        {screen === "home" && <HomeScreen collection={workspace.collection} reminderVisible={backupReminder.visible} onDownload={downloadBackup} onRemindLater={backupReminder.remindLater} onSelect={selectDocument} onOpenResult={openSearchResult} onImport={() => setImporting(true)} />}
 
         {screen === "settings" && <SettingsPanel count={workspace.collection.documents.length} storageError={workspace.storageError} canExport={workspace.collection.documents.length > 0 || Boolean(workspace.storageError)} onExport={downloadBackup} onImport={() => setImporting(true)} />}
 
         {screen === "resource" && (!root ? (
-          <section className="create-resource">
-            <header className="screen-heading"><p className="eyebrow">{t("Почни з цілого")}</p><h1>{t("Нове ціле")}</h1><p>{t("Назви ціле, наприклад команду, проєкт, бюджет або час.")}</p></header>
-            {workspace.collection.documents.length >= MAX_DOCUMENTS ? <div className="surface p-6"><p>{t("Збережено всі")}{" "}{MAX_DOCUMENTS} {" "}{t("цілих. Звільни місце, перш ніж створювати нове.")}</p><button type="button" className="primary-button mt-5" onClick={() => goToScreen("home")}>{t("Мої цілі")}</button></div> : <div className="surface p-5 sm:p-7">
-              <NodeForm createWhole submitLabel={t("Створити ціле")} onCancel={() => goToScreen("home")} onSubmit={(name, value, unit, color, icon) => {
-                const newRoot = createNode(crypto.randomUUID(), name, value, unit, color, icon);
-                return workspace.change({ root: newRoot, pathIds: [newRoot.id] }, t("Ціле створено. Додай першу частину."));
-              }} />
-            </div>}
-          </section>
+          <CreateWholeScreen count={workspace.collection.documents.length} onCancel={() => goToScreen("home")} onSubmit={handleCreateWhole} />
         ) : current ? (
-          <>
-            <LevelNavigation path={path} onNavigate={goToPath} showingPath={showingPath} onShowPath={setShowingPath} />
-            <header className="resource-header">
-              <div className="resource-title-row">
-                <div className="min-w-0">
-                  <p className="eyebrow">{path.length === 1 ? t("Ціле") : t("Частина · рівень {p0}", {p0: path.length})}</p>
-                  <h1>{current.icon && <span className="whole-title-icon" style={{ color: getNodeColor(current) }}><Icon name={getNodeIcon(current)} width="28" height="28" /></span>}{current.name}</h1>
-                  <p className="resource-value"><NodeMetadata node={current} /></p>
-                  {isMeasuredNode(current) && isMeasuredNode(root) && current.id !== root.id && <p className="resource-root-share">{formatPercent(current.value / root.value * 100)} {t("від усього «{name}»", { name: root.name })}</p>}
-                </div>
-                <button type="button" className="icon-button" aria-label={t("Дії для «{p0}»", {p0: current.name})} onClick={() => setActionsId(current.id)}><Icon name="more" /></button>
-              </div>
-              {isMeasuredNode(current) && <div className="resource-summary">
-                <p>{t("Розподілено")}</p><p>{formatPercent(used / current.value * 100)}</p>
-                <p>{t("Вільно:")}{" "}{formatNumber(free)} {current.unit}</p>
-                <div className="usage-track" aria-hidden="true"><span style={{ width: `${Math.min(100, used / current.value * 100)}%` }} /></div>
-              </div>}
-              <button type="button" className="primary-button add-part-button" disabled={(isMeasuredNode(current) && free === 0) || atLimit} onClick={() => setAdding(true)}><Icon name="plus" /><span>{t("Додати частину")}</span></button>
-            </header>
-            <div className={`workspace-grid${!isMeasuredNode(current) && (structureView === "list" || !current.children.length) ? " structure-list-workspace" : ""}`}>
-              <div className="min-w-0">
-                <div className="map-heading"><h2>{isMeasuredNode(current) ? t("Карта цілого") : t("Структура частин")}</h2>{!isMeasuredNode(current) && <StructureViewToggle />}</div>
-                {!isMeasuredNode(current) && (structureView === "list" || !current.children.length)
-                  ? <PartsList node={current} free={free} atLimit={atLimit} onOpen={openNode} onActions={setActionsId} />
-                  : <Treemap node={current} onOpen={openNode} />}
-              </div>
-              {(isMeasuredNode(current) || (structureView === "cards" && current.children.length > 0)) && <aside><PartsList node={current} free={free} atLimit={atLimit} onOpen={openNode} onActions={setActionsId} /></aside>}
-            </div>
-          </>
+          <WholeScreen root={root} current={current} path={path} showingPath={showingPath} free={free} used={used} atLimit={atLimit} onNavigate={goToPath} onShowPath={setShowingPath} onActions={setActionsId} onAdd={() => setAdding(true)} onOpen={openNode} />
         ) : <p role="alert">{t("Не вдалося відкрити частину.")}{" "}<button type="button" onClick={() => goToPath([root.id])} className="underline">{t("Повернутися до цілого")}</button></p>)}
 
-        {actionNode && root && <Modal title={actionNode.name} onClose={() => setActionsId(null)} variant="sheet">
-          <p className="mb-5 text-sm text-neutral-400"><NodeMetadata node={actionNode} />{isMeasuredNode(actionNode) && actionNode.children.length ? t(" · частин: {p0}", {p0: actionNode.children.length}) : ""}</p>
-          <div className="action-sheet-list">
-            {actionNode.id !== current?.id && <button type="button" onClick={() => {
-              const actionParent = findParent(root, actionNode.id);
-              const parentIndex = path.findIndex((node) => node.id === actionParent?.id);
-              if (parentIndex >= 0) goToPath([...path.slice(0, parentIndex + 1).map((node) => node.id), actionNode.id]);
-            }}><Icon name="resource" /><span>{t("Відкрити частину")}</span><Icon name="chevron" width="16" height="16" /></button>}
-            <button type="button" onClick={() => { setActionsId(null); setEditingId(actionNode.id); }}><Icon name="edit" /><span>{actionNode.id === root.id ? t("Редагувати ціле") : t("Редагувати частину")}</span></button>
-            {actionParent && <>
-              <button type="button" disabled={actionIndex <= 0} onClick={() => moveActionPart("up")}><Icon name="back" style={{ transform: "rotate(90deg)" }} /><span>{t("Перемістити вище")}</span></button>
-              <button type="button" disabled={actionIndex >= actionParent.children.length - 1} onClick={() => moveActionPart("down")}><Icon name="back" style={{ transform: "rotate(-90deg)" }} /><span>{t("Перемістити нижче")}</span></button>
-            </>}
-            {actionNode.id === root.id && <button type="button" disabled={workspace.collection.documents.length >= MAX_DOCUMENTS} onClick={() => {
-              const issue = workspace.duplicate(t("Копія — {name}", { name: root.name }));
-              if (issue) { setActionError(issue); setActionsId(null); } else goToScreen("resource");
-            }}><Icon name="copy" /><span>{t("Створити копію цілого")}</span></button>}
-            <button type="button" className="action-danger" onClick={() => { setActionsId(null); if (actionNode.id === root.id) setDeletingWhole(true); else setDeletingId(actionNode.id); }}><Icon name="trash" /><span>{actionNode.id === root.id ? t("Видалити ціле") : t("Видалити частину")}</span></button>
-          </div>
-        </Modal>}
-
-        {adding && current && root && <Modal title={t("Додати частину")} onClose={() => setAdding(false)}>
-          {isMeasuredNode(current) && <p className="mb-5 text-sm text-neutral-400">{t("Доступно")}{" "}{formatNumber(free)} {current.unit}</p>}
-          {atLimit ? <p className="text-sm text-amber-300">{t("Досягнуто межі розміру цілого. Відредагуй наявні частини.")}</p> :
-            <NodeForm key={current.id} optionalQuantity={!isMeasuredNode(current)} unit={isMeasuredNode(current) ? current.unit : ""} available={isMeasuredNode(current) ? free : undefined} parentValue={isMeasuredNode(current) ? current.value : undefined} parentName={current.name} submitLabel={t("Додати частину")} onCancel={() => setAdding(false)} onSubmit={(name, value, unit, color, icon) => {
-              const child = createNode(crypto.randomUUID(), name, value, isMeasuredNode(current) ? current.unit : unit, color, icon);
-              const nextRoot = addPart(root, current.id, child);
-              const issue = workspace.change({ root: nextRoot, pathIds }, t("Додано «{p0}».", {p0: name}));
-              if (issue) return issue;
-              setAdding(false);
-            }} />}
-        </Modal>}
-
-        {editing && root && <Modal key={editing.id} title={editing.id === root.id ? t("Редагувати ціле") : t("Редагувати частину")} onClose={() => setEditingId(null)}>
-          <p className="mb-5 text-sm leading-relaxed text-neutral-400">{isMeasuredNode(editing) ? t("Зміни назву або значення. Вкладені частини залишаться.") : t("Тип цілого після створення не змінюється.")}{availableForEdit !== undefined ? t(" Доступно до {p0} {p1}.", {p0: formatNumber(availableForEdit), p1: isMeasuredNode(editing) ? editing.unit : ""}) : ""}</p>
-          <NodeForm key={editing.id} initialName={editing.name} initialColor={editing.color} initialIcon={editing.icon} structuralEdit={!isMeasuredNode(editing)} initialValue={isMeasuredNode(editing) ? editing.value : undefined} unit={isMeasuredNode(editing) ? editing.unit : ""} minimum={sumValues(editing.children)} available={availableForEdit} parentValue={parent && isMeasuredNode(parent) ? parent.value : undefined} parentName={parent?.name} submitLabel={t("Зберегти зміни")} onCancel={() => setEditingId(null)} onSubmit={(name, value, _unit, color, icon) => {
-            try {
-              const nextRoot = editPart(root, editing.id, name, value, color ?? null, icon ?? null);
-              const issue = workspace.change({ root: nextRoot, pathIds }, t("Зміни до «{p0}» збережено.", {p0: name}));
-              if (issue) return issue;
-              setEditingId(null);
-            } catch (error) { return error instanceof Error ? error.message : t("Не вдалося зберегти зміни."); }
-          }} />
-        </Modal>}
-
-        {deletingWhole && root && <Modal title={t("Видалити ціле «{p0}»?", {p0: root.name})} onClose={() => setDeletingWhole(false)}>
-          <p className="text-sm leading-relaxed text-neutral-300">{t("Буде видалено усе ціле разом із частинами. Інші цілі залишаться. Дію можна скасувати у верхній панелі вкладки «Ціле».")}</p>
-          <div className="mt-6 flex justify-end gap-3">
-            <button type="button" autoFocus data-dialog-initial-focus onClick={() => setDeletingWhole(false)} className="rounded-2xl border border-white/15 px-4 py-3 text-sm">{t("Залишити")}</button>
-            <button type="button" onClick={() => {
-              const issue = workspace.remove(root.id);
-              if (issue) setActionError(issue); else goToScreen("home");
-              setDeletingWhole(false);
-            }} className="rounded-2xl bg-rose-500 px-4 py-3 text-sm font-medium">{t("Видалити ціле")}</button>
-          </div>
-        </Modal>}
-
-        {importing && <ImportBackup currentCount={workspace.collection.documents.length} onImport={(incoming) => {
-          const issue = workspace.importCollection(incoming);
-          if (!issue) goToScreen("resource");
-          return issue;
-        }} onClose={() => setImporting(false)} />}
-
-        {deleting && root && <Modal title={t("Видалити «{p0}»?", {p0: deleting.name})} onClose={() => setDeletingId(null)}>
-          <p className="leading-relaxed text-neutral-300">{isMeasuredNode(deleting) && deletingParent && isMeasuredNode(deletingParent) && <>{t("Буде звільнено")}{" "}{formatNumber(deleting.value)} {deleting.unit}.</>}
-            {countParts(deleting) > 0 && t(" Також буде видалено вкладені частини: {p0}.", {p0: countParts(deleting)})} {" "}{t("Дію можна скасувати кнопкою «Скасувати» у верхній панелі.")}{" "}</p>
-          <div className="mt-6 flex justify-end gap-3">
-            <button type="button" autoFocus data-dialog-initial-focus onClick={() => setDeletingId(null)} className="rounded-2xl border border-white/15 px-4 py-3 text-sm">{t("Залишити")}</button>
-            <button type="button" onClick={() => {
-              const issue = workspace.change({ root: deletePart(root, deleting.id), pathIds }, t("«{p0}» видалено. Можна скасувати дію.", {p0: deleting.name}));
-              if (issue) setActionError(issue);
-              setDeletingId(null);
-            }} className="rounded-2xl bg-rose-500 px-4 py-3 text-sm font-medium">{t("Видалити")}</button>
-          </div>
-        </Modal>}
+        <WorkspaceDialogs
+          nodes={{ root, current, actionNode, actionParent, actionIndex, editing, parent, availableForEdit, deleting, deletingParent, free, atLimit, count: workspace.collection.documents.length }}
+          visibility={{ deletingWhole, adding, importing, onActionsId: setActionsId, onEditingId: setEditingId, onDeletingId: setDeletingId, onDeletingWhole: setDeletingWhole, onAdding: setAdding, onImporting: setImporting }}
+          actions={{ onOpenAction: openActionNode, onMove: moveActionPart, onDuplicate: handleDuplicateWhole, onAddPart: handleAddPart, onEditNode: handleEditNode, onDeleteWhole: handleDeleteWhole, onDeletePart: handleDeletePart, onImport: handleImport }}
+        />
       </div>
       <BottomNavigation screen={screen} onNavigate={goToScreen} />
     </main>
