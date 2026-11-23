@@ -5,6 +5,7 @@
   "scripts": {
     "test": "node tests/core.mjs",
     "test:e2e": "playwright test",
+    "check:release": "node scripts/check-release.mjs",
     "dev": "next dev",
     "build": "next build && node scripts/build-pwa.mjs",
     "start": "next start",
