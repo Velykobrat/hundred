@@ -289,6 +289,7 @@ export const english: Record<string, string> = {
   "Після імпорту буде більше {max} розподілів. Звільни місце та спробуй ще раз.": "Import would exceed {max} wholes. Free up space and try again.",
   "Не вдалося прочитати збереження. Нові зміни поки не зберігатимуться; попередні дані не перезаписані.": "Could not read saved data. New changes will not be saved yet; previous data has not been overwritten.",
   "Дані оновлено в іншій вкладці. Історію дій очищено.": "Data was updated in another tab. Undo history has been cleared.",
+  "Дані змінилися в іншій вкладці. Новішу версію завантажено, щоб не перезаписати зміни.": "Data changed in another tab. The newer version was loaded to avoid overwriting changes.",
   "Інша вкладка записала некоректні дані. Автозбереження призупинено; поточні розподіли залишилися.": "Another tab saved invalid data. Autosave is paused; your current wholes remain.",
   "Дані ще відновлюються.": "Your data is still being restored.",
   "Не вдалося виконати дію.": "Could not complete the action.",

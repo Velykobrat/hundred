@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const temp = new URL('./.cache/', import.meta.url);
 mkdirSync(temp, { recursive: true });
-for (const name of ['search', 'i18n', 'backup-reminder', 'node-icon', 'node-color', 'node-mode', 'tree', 'document', 'history', 'treemap', 'collection', 'percentage']) {
+for (const name of ['search', 'i18n', 'backup-reminder', 'node-icon', 'node-color', 'node-mode', 'tree', 'document', 'history', 'treemap', 'collection', 'collection-storage', 'percentage']) {
   const source = readFileSync(new URL(`../src/lib/${name}.ts`, import.meta.url), 'utf8');
   const js = stripTypeScriptTypes(source).replace(/from "\.\/(node-icon|node-color|node-mode|tree|document|collection|percentage)"/g, 'from "./$1.mjs"');
   writeFileSync(new URL(`${name}.mjs`, temp), js);
@@ -12,11 +12,49 @@ const { createNode, addPart, parseValue, remaining, sumValues, editPart, deleteP
 const { documentReducer, initialState } = await import(new URL('history.mjs', temp));
 const { createTreemap } = await import(new URL('treemap.mjs', temp));
 const { decodeCollection, encodeCollection, emptyCollection, cloneDocument, putDocument, appendImported } = await import(new URL('collection.mjs', temp));
+const { decodeStoredCollection, writeCollection, InvalidStoredCollection } = await import(new URL('collection-storage.mjs', temp));
 const { parsePercent, percentToValue, valueToPercent } = await import(new URL('percentage.mjs', temp));
 const node = (id, value, children = []) => ({ mode: 'measured', id, name: id, value, unit: 'грн', children });
 const root = node('root', 100, [node('a', 60, [node('nested', 25)]), node('b', 30)]);
 let tested = 0;
 function check(name, callback) { callback(); tested++; console.log(`PASS ${name}`); }
+check('Legacy v3 and revision-bearing backups remain compatible', () => {
+  const collection = putDocument(emptyCollection, { root, pathIds: ['root'] });
+  const legacy = encodeCollection(collection);
+  assert.deepEqual(decodeStoredCollection(legacy), { collection, revision: null });
+  const revised = JSON.stringify({ ...JSON.parse(legacy), revision: 'revision-1' });
+  assert.deepEqual(decodeStoredCollection(revised), { collection, revision: 'revision-1' });
+  assert.deepEqual(decodeCollection(revised), collection);
+  assert.equal(JSON.parse(encodeCollection(collection)).revision, undefined);
+});
+check('Stale write reloads newer collection and can write after reloading', () => {
+  let raw = null;
+  const storage = { getItem: () => raw, setItem: (_key, value) => { raw = value; } };
+  const a = putDocument(emptyCollection, { root, pathIds: ['root'] });
+  const first = writeCollection(storage, null, a, () => 'r1');
+  assert.equal(first.kind, 'saved');
+  const oldRaw = raw;
+  const b = putDocument(a, { root: createNode('team', 'Team'), pathIds: ['team'] });
+  const second = writeCollection(storage, oldRaw, b, () => 'r2');
+  assert.equal(second.kind, 'saved');
+  const latest = raw;
+  const conflict = writeCollection(storage, oldRaw, a, () => 'should-not-write');
+  assert.equal(conflict.kind, 'conflict');
+  assert.equal(conflict.stored.revision, 'r2');
+  assert.deepEqual(conflict.stored.collection, b);
+  assert.equal(raw, latest);
+  assert.equal(writeCollection(storage, latest, b, () => 'r3').kind, 'saved');
+  assert.equal(decodeStoredCollection(raw).revision, 'r3');
+});
+check('Malformed external data and storage failures never overwrite data', () => {
+  let raw = '{broken';
+  const storage = { getItem: () => raw, setItem: (_key, value) => { raw = value; } };
+  assert.throws(() => writeCollection(storage, null, emptyCollection, () => 'r'), InvalidStoredCollection);
+  assert.equal(raw, '{broken');
+  assert.throws(() => decodeStoredCollection(JSON.stringify({ version: 3, documents: [], activeId: null, revision: 7 })), InvalidStoredCollection);
+  assert.throws(() => writeCollection({ getItem() { throw Error('read'); }, setItem() {} }, null, emptyCollection, () => 'r'), /read/);
+  assert.throws(() => writeCollection({ getItem() { return null; }, setItem() { throw Error('write'); } }, null, emptyCollection, () => 'r'), /write/);
+});
 check('Comma, spaces, precision and invalid numeric input', () => {
   assert.equal(parseValue('1 000,25'), 1000.25);
   for (const value of ['-1', '0', 'NaN', 'Infinity', '1e3', '1.0000001', '1000000001', '1,2,3', '']) assert.equal(parseValue(value), null);

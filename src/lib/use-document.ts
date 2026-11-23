@@ -1,53 +1,91 @@
 "use client";
 
-import { useEffect, useReducer, useCallback, useRef } from "react";
+import { useEffect, useLayoutEffect, useReducer, useCallback, useRef } from "react";
 import { STORAGE_KEY, type Document } from "./document";
-import { appendImported, cloneDocument, decodeCollection, emptyCollection, encodeCollection, putDocument, type Collection } from "./collection";
-import { documentReducer as reducer, initialState as initial, type Action } from "./history";
+import { appendImported, cloneDocument, emptyCollection, putDocument, type Collection } from "./collection";
+import { decodeStoredCollection, InvalidStoredCollection, writeCollection } from "./collection-storage";
+import { documentReducer as reducer, initialState as initial, type Action, type State } from "./history";
+
+const conflictNotice = "Дані змінилися в іншій вкладці. Новішу версію завантажено, щоб не перезаписати зміни.";
 
 export function useDocument() {
-  const [state, dispatch] = useReducer(reducer, initial);
+  const [state, dispatch] = useReducer((_previous: State, next: State) => next, initial);
   const stateRef = useRef(state);
   const blockedStorage = useRef(false);
-  useEffect(() => { stateRef.current = state; }, [state]);
+  const persistedRaw = useRef<string | null>(null);
+  const awaitingExternalRender = useRef(false);
+  const apply = useCallback((action: Action) => {
+    const next = reducer(stateRef.current, action);
+    stateRef.current = next;
+    dispatch(next);
+    return next;
+  }, []);
+  useLayoutEffect(() => {
+    if (state.collection === stateRef.current.collection) awaitingExternalRender.current = false;
+  }, [state.collection]);
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      dispatch({ type: "load", collection: raw ? decodeCollection(raw) : emptyCollection });
+      const stored = decodeStoredCollection(raw);
+      persistedRaw.current = raw;
+      blockedStorage.current = false;
+      apply({ type: "load", collection: stored.collection });
     } catch {
       blockedStorage.current = true;
-      dispatch({ type: "load", collection: emptyCollection, error: "Не вдалося прочитати збереження. Нові зміни поки не зберігатимуться; попередні дані не перезаписані." });
+      apply({ type: "load", collection: emptyCollection, error: "Не вдалося прочитати збереження. Нові зміни поки не зберігатимуться; попередні дані не перезаписані." });
     }
     const onStorage = (event: StorageEvent) => {
       if (event.key !== STORAGE_KEY && event.key !== null) return;
       try {
-        const collection = event.newValue ? decodeCollection(event.newValue) : emptyCollection;
+        // A queued event may describe a value already superseded by another write.
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw === persistedRaw.current) return;
+        const stored = decodeStoredCollection(raw);
+        persistedRaw.current = raw;
         blockedStorage.current = false;
-        dispatch({ type: "load", collection, notice: "Дані оновлено в іншій вкладці. Історію дій очищено." });
+        awaitingExternalRender.current = true;
+        apply({ type: "load", collection: stored.collection, notice: "Дані оновлено в іншій вкладці. Історію дій очищено." });
       } catch {
         blockedStorage.current = true;
-        dispatch({ type: "storage", error: "Інша вкладка записала некоректні дані. Автозбереження призупинено; поточні цілі залишилися." });
+        apply({ type: "storage", error: "Інша вкладка записала некоректні дані. Автозбереження призупинено; поточні цілі залишилися." });
       }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, []);
+  }, [apply]);
 
   const send = useCallback((action: Action): string | void => {
     const current = stateRef.current;
     if (!current.ready) return "Дані ще відновлюються.";
+    // Event handlers from the previous render can still contain an old document.
+    if (awaitingExternalRender.current) return conflictNotice;
     let next;
     try { next = reducer(current, action); } catch (error) { return error instanceof Error ? error.message : "Не вдалося виконати дію."; }
-    stateRef.current = next;
-    dispatch(action);
-    if (next.collection === current.collection || blockedStorage.current) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, encodeCollection(next.collection));
-      dispatch({ type: "storage", error: null });
-    } catch {
-      dispatch({ type: "storage", error: "Не вдалося зберегти дані на цьому пристрої. Залиш цю вкладку відкритою та завантаж резервну копію." });
+    if (next.collection === current.collection || blockedStorage.current) {
+      apply(action);
+      return;
     }
-  }, []);
+    try {
+      const result = writeCollection(localStorage, persistedRaw.current, next.collection, () => crypto.randomUUID());
+      if (result.kind === "conflict") {
+        persistedRaw.current = result.raw;
+        awaitingExternalRender.current = true;
+        apply({ type: "load", collection: result.stored.collection, notice: conflictNotice });
+        return conflictNotice;
+      }
+      persistedRaw.current = result.raw;
+      apply(action);
+      apply({ type: "storage", error: null });
+    } catch (error) {
+      if (error instanceof InvalidStoredCollection) {
+        blockedStorage.current = true;
+        apply({ type: "storage", error: "Інша вкладка записала некоректні дані. Автозбереження призупинено; поточні цілі залишилися." });
+        return "Інша вкладка записала некоректні дані. Автозбереження призупинено; поточні цілі залишилися.";
+      }
+      apply(action);
+      apply({ type: "storage", error: "Не вдалося зберегти дані на цьому пристрої. Залиш цю вкладку відкритою та завантаж резервну копію." });
+    }
+  }, [apply]);
 
   const duplicate = (copyName?: string) => {
     try {
