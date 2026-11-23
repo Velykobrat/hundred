@@ -190,7 +190,7 @@ function Workspace() {
         {screen === "resource" && (!root ? (
           <CreateWholeScreen count={workspace.collection.documents.length} onCancel={() => goToScreen("home")} onSubmit={handleCreateWhole} />
         ) : current ? (
-          <WholeScreen root={root} current={current} path={path} showingPath={showingPath} free={free} used={used} atLimit={atLimit} onNavigate={goToPath} onShowPath={setShowingPath} onActions={setActionsId} onAdd={() => setAdding(true)} onOpen={openNode} />
+          <WholeScreen root={root} current={current} path={path} showingPath={showingPath} free={free} used={used} atLimit={atLimit} onNavigate={goToPath} onHome={() => goToScreen("home")} onShowPath={setShowingPath} onActions={setActionsId} onAdd={() => setAdding(true)} onOpen={openNode} />
         ) : <p role="alert">{t("Не вдалося відкрити частину.")}{" "}<button type="button" onClick={() => goToPath([root.id])} className="underline">{t("Повернутися до цілого")}</button></p>)}
 
         <WorkspaceDialogs

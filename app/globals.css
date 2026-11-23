@@ -259,7 +259,11 @@ svg { flex-shrink: 0; }
 
 
 .structural-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; }
-.structural-card { min-height: 140px; padding: 20px; text-align: left; display: flex; flex-direction: column; gap: 12px; overflow-wrap: anywhere; }
+.whole-screen { touch-action: pan-y pinch-zoom; }
+.structural-card { position: relative; min-height: 140px; overflow-wrap: anywhere; }
+.structural-card-open { width: 100%; min-height: 136px; padding: 20px 56px 20px 20px; text-align: left; display: flex; flex-direction: column; gap: 12px; user-select: none; -webkit-touch-callout: none; }
+.structural-card-actions { position: absolute; top: 8px; right: 8px; border: 0; background: transparent; }
+.structural-card-actions.icon-button:hover:not(:disabled) { background: transparent; }
 .structural-card span { color: var(--muted); font-size: 13px; }
 
 .color-selector { border: 0; padding: 0; min-width: 0; }

@@ -8,13 +8,64 @@ import type { Node, LayoutItem } from "../types/node";
 import { createTreemap } from "../lib/treemap";
 import { remaining } from "../lib/document";
 import { getNodeColor } from "../lib/format";
+import { useEffect, useId, useRef, type PointerEvent } from "react";
 
-export default function Treemap({ node, onOpen }: { node: Node; onOpen: (node: Node) => void }) {
+const LONG_PRESS_MS = 500;
+const LONG_PRESS_MOVE_TOLERANCE = 10;
+
+function StructuralCard({ child, onOpen, onActions }: { child: Node; onOpen: (node: Node) => void; onActions: (id: string) => void }) {
+  const { t } = usePreferences();
+  const metadataId = useId();
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pointer = useRef<{ id: number; x: number; y: number } | null>(null);
+  const suppressClick = useRef(false);
+  function clearTimer() {
+    if (timer.current !== null) clearTimeout(timer.current);
+    timer.current = null;
+  }
+  useEffect(() => () => clearTimer(), []);
+  function start(event: PointerEvent<HTMLButtonElement>) {
+    suppressClick.current = false;
+    if ((event.pointerType !== "touch" && event.pointerType !== "pen") || !event.isPrimary) return;
+    clearTimer();
+    pointer.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      suppressClick.current = true;
+      pointer.current = null;
+      onActions(child.id);
+    }, LONG_PRESS_MS);
+  }
+  function move(event: PointerEvent<HTMLButtonElement>) {
+    const start = pointer.current;
+    if (start && start.id === event.pointerId && Math.hypot(event.clientX - start.x, event.clientY - start.y) > LONG_PRESS_MOVE_TOLERANCE) {
+      clearTimer();
+      pointer.current = null;
+      suppressClick.current = true;
+    }
+  }
+  function end(event: PointerEvent<HTMLButtonElement>) {
+    if (pointer.current?.id === event.pointerId) pointer.current = null;
+    clearTimer();
+  }
+  return <div className="surface structural-card" style={{ borderTop: "4px solid " + getNodeColor(child) }}>
+    <button type="button" className="structural-card-open" aria-label={t("Відкрити «{p0}»", {p0: child.name})} aria-describedby={isMeasuredNode(child) ? metadataId : undefined}
+      onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end}
+      onContextMenu={(event) => event.preventDefault()}
+      onClick={(event) => {
+        if (suppressClick.current && event.detail !== 0) { suppressClick.current = false; return; }
+        onOpen(child);
+      }}>
+      <span className="structural-card-title">{child.icon && <Icon name={child.icon} style={{ color: getNodeColor(child) }} />}<strong>{child.name}</strong></span>{isMeasuredNode(child) && <span id={metadataId}><NodeMetadata node={child} /></span>}
+    </button>
+    <button type="button" className="icon-button structural-card-actions" aria-label={t("Дії для «{p0}»", {p0: child.name})} onClick={() => onActions(child.id)}><Icon name="more" /></button>
+  </div>;
+}
+
+export default function Treemap({ node, onOpen, onActions }: { node: Node; onOpen: (node: Node) => void; onActions: (id: string) => void }) {
   const { t, formatNumber, formatPercent } = usePreferences();
   if (!isMeasuredNode(node)) return <section aria-label={t("Структура частин")} className="structural-grid">
-    {node.children.map(child => <button type="button" key={child.id} className="surface structural-card" style={{ borderTop: "4px solid " + getNodeColor(child) }} onClick={() => onOpen(child)}>
-      <span className="structural-card-title">{child.icon && <Icon name={child.icon} style={{ color: getNodeColor(child) }} />}<strong>{child.name}</strong></span>{isMeasuredNode(child) && <span><NodeMetadata node={child} /></span>}
-    </button>)}
+    {node.children.map(child => <StructuralCard key={child.id} child={child} onOpen={onOpen} onActions={onActions} />)}
   </section>;
   const totalValue = node.value;
   const free = remaining(node);
