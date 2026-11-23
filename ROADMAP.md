@@ -4,21 +4,21 @@ Hundred centers on **Whole → Parts → New Whole**. Improvements should help p
 
 ## Now
 
-- Complete final desktop and mobile QA, including a real-device check and dark and light themes.
-- Spot-check keyboard navigation and a screen reader; verify export, import, and offline use in an isolated profile.
-- Review the working tree and prepare the 0.9.0 commit, tag, and release using the [checklist](docs/release-checklist.md).
+- Monitor 0.9.0 in real usage and collect bugs and usability feedback.
+- Verify remaining browser and real-device edge cases, including offline use and accessibility.
+- Harden multi-tab editing behavior.
+- Improve mobile interaction with structural cards.
 
 ## Next
 
 - Refine search and make adding or editing several structural Parts faster.
 - Improve backup clarity and recovery guidance.
-- Explore ways to make existing color and icon choices more useful, including simple patterns where they improve distinction.
 - Evaluate whether the existing map and structural list would benefit from an additional tree view.
-- Add a separate Playwright CI job after confirming the suite is stable.
+- Broaden browser and assistive-technology coverage.
 
 ## Later
 
 - Consider richer metadata and optional export formats when they clarify a Whole or its Parts.
-- Expand accessibility testing across assistive technologies, browsers, and devices.
+- Explore ways to make existing color and icon choices more useful, including simple patterns where they improve distinction.
 - Explore templates and examples without imposing a single way to use Hundred.
 - Consider optional sharing or synchronization only if it supports the local-first product direction; accounts and cloud services are not required today.
