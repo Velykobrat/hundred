@@ -25,14 +25,39 @@ function StructuralCard({ child, onOpen, onActions }: { child: Node; onOpen: (no
   }
   useEffect(() => () => clearTimer(), []);
   function start(event: PointerEvent<HTMLButtonElement>) {
-    suppressClick.current = false;
     if ((event.pointerType !== "touch" && event.pointerType !== "pen") || !event.isPrimary) return;
+    suppressClick.current = false;
     clearTimer();
     pointer.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    const pointerId = event.pointerId;
     timer.current = setTimeout(() => {
       timer.current = null;
       suppressClick.current = true;
       pointer.current = null;
+      // The newly opened sheet can appear under the still-pressed finger.
+      // Do not let the release activate an action in that sheet.
+      const cleanup = () => {
+        document.removeEventListener("click", blockReleaseClick, true);
+        document.removeEventListener("pointerdown", nextPress, true);
+      };
+      const nextPress = (press: globalThis.PointerEvent) => { if (press.pointerId === pointerId) cleanup(); };
+      const blockReleaseClick = (click: MouseEvent) => {
+        if (click instanceof globalThis.PointerEvent && click.pointerId === pointerId) {
+          click.preventDefault();
+          click.stopPropagation();
+          cleanup();
+        }
+      };
+      const finish = (release: globalThis.PointerEvent) => {
+        if (release.pointerId !== pointerId) return;
+        document.removeEventListener("pointerup", finish, true);
+        document.removeEventListener("pointercancel", finish, true);
+        document.addEventListener("pointerdown", nextPress, true);
+        setTimeout(cleanup, 500);
+      };
+      document.addEventListener("click", blockReleaseClick, true);
+      document.addEventListener("pointerup", finish, true);
+      document.addEventListener("pointercancel", finish, true);
       onActions(child.id);
     }, LONG_PRESS_MS);
   }
@@ -58,7 +83,7 @@ function StructuralCard({ child, onOpen, onActions }: { child: Node; onOpen: (no
       }}>
       <span className="structural-card-title">{child.icon && <Icon name={child.icon} style={{ color: getNodeColor(child) }} />}<strong>{child.name}</strong></span>{isMeasuredNode(child) && <span id={metadataId}><NodeMetadata node={child} /></span>}
     </button>
-    <button type="button" className="icon-button structural-card-actions" aria-label={t("Дії для «{p0}»", {p0: child.name})} onClick={() => onActions(child.id)}><Icon name="more" /></button>
+    <button type="button" data-actions-trigger className="icon-button structural-card-actions" aria-label={t("Дії для «{p0}»", {p0: child.name})} onClick={() => onActions(child.id)}><Icon name="more" /></button>
   </div>;
 }
 

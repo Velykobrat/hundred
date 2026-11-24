@@ -25,7 +25,7 @@ export default function PartsList({ node, free, atLimit, onOpen, onActions }: { 
           {isMeasuredNode(node) && isMeasuredNode(child) && <span id={`${descriptionId}-percent-${index}`} className="part-percent">{formatPercent(child.value / node.value * 100)}</span>}
           <Icon name="chevron" className="part-chevron" width="15" height="15" />
         </button>
-        <button type="button" className="icon-button part-actions" aria-label={t("Дії для «{p0}»", {p0: child.name})} onClick={() => onActions(child.id)}><Icon name="more" /></button>
+        <button type="button" data-actions-trigger className="icon-button part-actions" aria-label={t("Дії для «{p0}»", {p0: child.name})} onClick={() => onActions(child.id)}><Icon name="more" /></button>
       </li>)}
     </ul> : <p className="parts-empty">{t("Тут поки немає частин.")}</p>}
     {atLimit && <p className="parts-note text-amber-300">{t("Досягнуто межі розміру. Можна редагувати наявні частини.")}</p>}

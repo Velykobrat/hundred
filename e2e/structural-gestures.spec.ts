@@ -93,7 +93,7 @@ test("edge swipe returns a child to the root and the root to Home", async ({ pag
   await expect(page.getByRole("button", { name: "Відкрити ціле «Company»" })).toBeVisible();
 });
 
-test("one edge swipe returns a deeply nested part directly to the root", async ({ page }) => {
+test("swipe returns one level at a time, including from the expanded start zone", async ({ page }) => {
   await createWhole(page, "Company");
   await addPart(page, "Development");
   await page.getByRole("button", { name: "Відкрити «Development»" }).click();
@@ -102,8 +102,28 @@ test("one edge swipe returns a deeply nested part directly to the root", async (
   await addPart(page, "React");
   await page.getByRole("button", { name: "Відкрити «React»" }).click();
   await expect(page.getByRole("heading", { name: "React", level: 1 })).toBeVisible();
-  await touchSequence(page, { x: 20, y: 180 }, { x: 120, y: 180 });
+  await touchSequence(page, { x: 150, y: 180 }, { x: 250, y: 180 });
+  await expect(page.getByRole("heading", { name: "React", level: 1 })).toBeVisible();
+  await touchSequence(page, { x: 100, y: 180 }, { x: 200, y: 180 });
+  await expect(page.getByRole("heading", { name: "Frontend", level: 1 })).toBeVisible();
+  await touchSequence(page, { x: 100, y: 180 }, { x: 200, y: 180 });
+  await expect(page.getByRole("heading", { name: "Development", level: 1 })).toBeVisible();
+  await touchSequence(page, { x: 100, y: 180 }, { x: 200, y: 180 });
   await expect(page.getByRole("heading", { name: "Company", level: 1 })).toBeVisible();
+  await touchSequence(page, { x: 100, y: 180 }, { x: 200, y: 180 });
+  await expect(page.getByRole("button", { name: "Відкрити ціле «Company»" })).toBeVisible();
+});
+
+test("swipe works at the top, middle and bottom of Whole content", async ({ page }) => {
+  await createWhole(page, "Company");
+  await addPart(page, "Development");
+  for (const y of [150, 400, 740]) {
+    await page.getByRole("button", { name: "Відкрити «Development»" }).click();
+    await expect(page.getByRole("heading", { name: "Development", level: 1 })).toBeVisible();
+    expect(await page.evaluate((point) => Boolean(document.elementFromPoint(8, point)?.closest(".whole-screen")), y)).toBe(true);
+    await touchSequence(page, { x: 8, y }, { x: 108, y });
+    await expect(page.getByRole("heading", { name: "Company", level: 1 })).toBeVisible();
+  }
 });
 
 test("long press followed by an edge drag opens only the actions menu", async ({ page }) => {

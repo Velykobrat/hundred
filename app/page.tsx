@@ -7,10 +7,11 @@ import PwaRegistration from "../src/components/PwaRegistration";
 import type { NodeColor } from "../src/lib/node-color";
 import type { NodeIcon } from "../src/lib/node-icon";
 import { isMeasuredNode } from "../src/lib/node-mode";
+import { createId } from "../src/lib/id";
 import type { Node } from "../src/types/node";
 import { findNodeById, countDescendants as countParts, findParent, movePart } from "../src/lib/tree";
 import { addPart, createNode, deletePart, editPart, remaining, sumValues, units } from "../src/lib/document";
-import { encodeCollection, type Collection } from "../src/lib/collection";
+import { encodeCollection, MAX_DOCUMENTS, type Collection } from "../src/lib/collection";
 import { useDocument } from "../src/lib/use-document";
 import { useBackupReminder } from "../src/lib/use-backup-reminder";
 import { useScreen } from "../src/lib/use-screen";
@@ -20,6 +21,7 @@ import HomeScreen from "../src/components/screens/HomeScreen";
 import CreateWholeScreen from "../src/components/screens/CreateWholeScreen";
 import WholeScreen from "../src/components/screens/WholeScreen";
 import WorkspaceDialogs from "../src/components/WorkspaceDialogs";
+import Icon from "../src/components/Icon";
 
 function Workspace() {
   const { t, translateMessage } = usePreferences();
@@ -91,12 +93,12 @@ function Workspace() {
     goToScreen("resource");
   }
   function handleCreateWhole(name: string, value: number | undefined, unit: string, color?: NodeColor, icon?: NodeIcon) {
-    const newRoot = createNode(crypto.randomUUID(), name, value, unit, color, icon);
+    const newRoot = createNode(createId(), name, value, unit, color, icon);
     return workspace.change({ root: newRoot, pathIds: [newRoot.id] }, t("Ціле створено. Додай першу частину."));
   }
   function handleAddPart(name: string, value: number | undefined, unit: string, color?: NodeColor, icon?: NodeIcon) {
     if (!root || !current) return;
-    const child = createNode(crypto.randomUUID(), name, value, isMeasuredNode(current) ? current.unit : unit, color, icon);
+    const child = createNode(createId(), name, value, isMeasuredNode(current) ? current.unit : unit, color, icon);
     const nextRoot = addPart(root, current.id, child);
     const issue = workspace.change({ root: nextRoot, pathIds }, t("Додано «{p0}».", {p0: name}));
     if (issue) return issue;
@@ -168,8 +170,9 @@ function Workspace() {
     <main className="hundred-app min-h-screen px-4 py-5 text-white sm:px-8 sm:py-8">
       <div className="mx-auto max-w-7xl">
         <PwaRegistration />
-        <header className="app-header">
-          <button type="button" onClick={() => goToScreen("home")} className="brand" aria-label={t("Hundred — на головну")}>Hundred<span className="brand-dot" aria-hidden="true" /></button>
+        <header className={`app-header${screen === "home" ? " home-header" : ""}`}>
+          <button type="button" onClick={() => screen === "home" ? window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }) : goToScreen("home")} className="brand" aria-label={t(screen === "home" ? "Hundred — нагору" : "Hundred — на головну")}>Hundred<span className="brand-dot" aria-hidden="true" /></button>
+          {screen === "home" && <button type="button" className="home-header-create" aria-label={t("Нове ціле")} disabled={workspace.collection.documents.length >= MAX_DOCUMENTS} onClick={() => selectDocument(null)}><Icon name="plus" /><span>{t("Нове ціле")}</span></button>}
           {screen === "resource" ? <div className="history-controls">
             <button type="button" onClick={() => { clearDialogs(); workspace.undo(); }} disabled={!workspace.past.length} className="icon-button" title={t("Скасувати останню зміну")} aria-label={t("Скасувати останню зміну")}>↶</button>
             <button type="button" onClick={() => { clearDialogs(); workspace.redo(); }} disabled={!workspace.future.length} className="icon-button" title={t("Повторити скасовану зміну")} aria-label={t("Повторити скасовану зміну")}>↷</button>
@@ -190,7 +193,7 @@ function Workspace() {
         {screen === "resource" && (!root ? (
           <CreateWholeScreen count={workspace.collection.documents.length} onCancel={() => goToScreen("home")} onSubmit={handleCreateWhole} />
         ) : current ? (
-          <WholeScreen root={root} current={current} path={path} showingPath={showingPath} free={free} used={used} atLimit={atLimit} onNavigate={goToPath} onHome={() => goToScreen("home")} onShowPath={setShowingPath} onActions={setActionsId} onAdd={() => setAdding(true)} onOpen={openNode} />
+          <WholeScreen root={root} current={current} path={path} showingPath={showingPath} free={free} used={used} atLimit={atLimit} onNavigate={goToPath} onHome={() => goToScreen("home")} onShowPath={setShowingPath} onActions={(id) => setActionsId((previous) => previous === id ? null : id)} onAdd={() => setAdding(true)} onOpen={openNode} />
         ) : <p role="alert">{t("Не вдалося відкрити частину.")}{" "}<button type="button" onClick={() => goToPath([root.id])} className="underline">{t("Повернутися до цілого")}</button></p>)}
 
         <WorkspaceDialogs

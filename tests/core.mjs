@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const temp = new URL('./.cache/', import.meta.url);
 mkdirSync(temp, { recursive: true });
-for (const name of ['search', 'i18n', 'backup-reminder', 'node-icon', 'node-color', 'node-mode', 'tree', 'document', 'history', 'treemap', 'collection', 'collection-storage', 'percentage']) {
+for (const name of ['id', 'search', 'i18n', 'backup-reminder', 'node-icon', 'node-color', 'node-mode', 'tree', 'document', 'history', 'treemap', 'collection', 'collection-storage', 'percentage']) {
   const source = readFileSync(new URL(`../src/lib/${name}.ts`, import.meta.url), 'utf8');
   const js = stripTypeScriptTypes(source).replace(/from "\.\/(node-icon|node-color|node-mode|tree|document|collection|percentage)"/g, 'from "./$1.mjs"');
   writeFileSync(new URL(`${name}.mjs`, temp), js);
@@ -14,10 +14,29 @@ const { createTreemap } = await import(new URL('treemap.mjs', temp));
 const { decodeCollection, encodeCollection, emptyCollection, cloneDocument, putDocument, appendImported } = await import(new URL('collection.mjs', temp));
 const { decodeStoredCollection, writeCollection, InvalidStoredCollection } = await import(new URL('collection-storage.mjs', temp));
 const { parsePercent, percentToValue, valueToPercent } = await import(new URL('percentage.mjs', temp));
+const { createId } = await import(new URL('id.mjs', temp));
 const node = (id, value, children = []) => ({ mode: 'measured', id, name: id, value, unit: 'грн', children });
 const root = node('root', 100, [node('a', 60, [node('nested', 25)]), node('b', 30)]);
 let tested = 0;
 function check(name, callback) { callback(); tested++; console.log(`PASS ${name}`); }
+check('ID generation uses randomUUID when available', () => {
+  const original = globalThis.crypto;
+  try {
+    Object.defineProperty(globalThis, 'crypto', { configurable: true, value: { randomUUID: () => 'native-id', getRandomValues: () => assert.fail('unexpected fallback') } });
+    assert.equal(createId(), 'native-id');
+  } finally { Object.defineProperty(globalThis, 'crypto', { configurable: true, value: original }); }
+});
+check('ID fallback uses secure random bytes and generates distinct UUID v4 values', () => {
+  const original = globalThis.crypto;
+  let calls = 0;
+  try {
+    Object.defineProperty(globalThis, 'crypto', { configurable: true, value: { getRandomValues: bytes => { calls++; original.getRandomValues(bytes); return bytes; } } });
+    const values = Array.from({ length: 100 }, createId);
+    assert.equal(calls, 100);
+    assert.equal(new Set(values).size, values.length);
+    for (const value of values) assert.match(value, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  } finally { Object.defineProperty(globalThis, 'crypto', { configurable: true, value: original }); }
+});
 check('Legacy v3 and revision-bearing backups remain compatible', () => {
   const collection = putDocument(emptyCollection, { root, pathIds: ['root'] });
   const legacy = encodeCollection(collection);

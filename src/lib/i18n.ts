@@ -112,6 +112,7 @@ export const english: Record<string, string> = {
   ". Відкрити частину": ". Open part",
   "100% цього рівня": "100% of this level",
   "Hundred — на головну": "Hundred — go to Home",
+  "Hundred — нагору": "Hundred — scroll to top",
   "«{p0}» видалено. Можна скасувати дію.": "“{p0}” deleted. You can undo this.",
   "Імпорт резервної копії": "Import backup",
   "Імпортувати файл": "Import file",

@@ -9,9 +9,9 @@ import Icon from "../Icon";
 import PartsList from "../PartsList";
 import Treemap from "../Treemap";
 import StructureViewToggle from "../StructureViewToggle";
-import { useRef, type PointerEvent, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent, type MouseEvent } from "react";
 
-const EDGE_START_PX = 32;
+const EDGE_START_PX = 120;
 const SWIPE_BACK_MIN_X = 70;
 const SWIPE_HORIZONTAL_DOMINANCE = 1.2;
 type Props = { root: Node; current: Node; path: Node[]; showingPath: boolean; free: number; used: number; atLimit: boolean; onNavigate: (path: string[]) => void; onHome: () => void; onShowPath: (show: boolean) => void; onActions: (id: string) => void; onAdd: () => void; onOpen: (node: Node) => void };
@@ -19,6 +19,16 @@ export default function WholeScreen({ root, current, path, showingPath, free, us
   const { t, formatNumber, formatPercent, structureView } = usePreferences();
   const swipe = useRef<{ id: number; x: number; y: number } | null>(null);
   const suppressClick = useRef(false);
+  const addButton = useRef<HTMLButtonElement>(null);
+  const [addButtonVisible, setAddButtonVisible] = useState(true);
+  const canAdd = !(isMeasuredNode(current) && free === 0) && !atLimit;
+  useEffect(() => {
+    const button = addButton.current;
+    if (!button) return;
+    const observer = new IntersectionObserver(([entry]) => setAddButtonVisible(entry.isIntersecting));
+    observer.observe(button);
+    return () => observer.disconnect();
+  }, []);
   function startSwipe(event: PointerEvent<HTMLDivElement>) {
     suppressClick.current = false;
     swipe.current = event.pointerType === "touch" && event.isPrimary && event.clientX <= EDGE_START_PX
@@ -32,7 +42,7 @@ export default function WholeScreen({ root, current, path, showingPath, free, us
     const dy = event.clientY - start.y;
     if (dx >= SWIPE_BACK_MIN_X && dx > Math.abs(dy) * SWIPE_HORIZONTAL_DOMINANCE) {
       suppressClick.current = true;
-      if (path.length > 1) onNavigate([root.id]); else onHome();
+      if (path.length > 1) onNavigate(path.slice(0, -1).map((node) => node.id)); else onHome();
     }
   }
   function captureClick(event: MouseEvent<HTMLDivElement>) {
@@ -57,14 +67,14 @@ export default function WholeScreen({ root, current, path, showingPath, free, us
                   <p className="resource-value"><NodeMetadata node={current} /></p>
                   {isMeasuredNode(current) && isMeasuredNode(root) && current.id !== root.id && <p className="resource-root-share">{formatPercent(current.value / root.value * 100)} {t("від усього «{name}»", { name: root.name })}</p>}
                 </div>
-                <button type="button" className="icon-button" aria-label={t("Дії для «{p0}»", {p0: current.name})} onClick={() => onActions(current.id)}><Icon name="more" /></button>
+                <button type="button" data-actions-trigger className="icon-button" aria-label={t("Дії для «{p0}»", {p0: current.name})} onClick={() => onActions(current.id)}><Icon name="more" /></button>
               </div>
               {isMeasuredNode(current) && <div className="resource-summary">
                 <p>{t("Розподілено")}</p><p>{formatPercent(used / current.value * 100)}</p>
                 <p>{t("Вільно:")}{" "}{formatNumber(free)} {current.unit}</p>
                 <div className="usage-track" aria-hidden="true"><span style={{ width: `${Math.min(100, used / current.value * 100)}%` }} /></div>
               </div>}
-              <button type="button" className="primary-button add-part-button" disabled={(isMeasuredNode(current) && free === 0) || atLimit} onClick={onAdd}><Icon name="plus" /><span>{t("Додати частину")}</span></button>
+              <button ref={addButton} type="button" className="primary-button add-part-button" disabled={!canAdd} onClick={onAdd}><Icon name="plus" /><span>{t("Додати частину")}</span></button>
             </header>
             <div className={`workspace-grid${!isMeasuredNode(current) ? " structure-list-workspace" : ""}`}>
               <div className="min-w-0">
@@ -77,6 +87,7 @@ export default function WholeScreen({ root, current, path, showingPath, free, us
               </div>
               {isMeasuredNode(current) && <aside><PartsList node={current} free={free} atLimit={atLimit} onOpen={onOpen} onActions={onActions} /></aside>}
             </div>
+            {canAdd && !addButtonVisible && <button type="button" className="primary-button add-part-floating" aria-label={t("Додати частину")} onClick={onAdd}><Icon name="plus" /></button>}
           </div>
   );
 }

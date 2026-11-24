@@ -5,6 +5,7 @@ import { STORAGE_KEY, type Document } from "./document";
 import { appendImported, cloneDocument, emptyCollection, putDocument, type Collection } from "./collection";
 import { decodeStoredCollection, InvalidStoredCollection, writeCollection } from "./collection-storage";
 import { documentReducer as reducer, initialState as initial, type Action, type State } from "./history";
+import { createId } from "./id";
 
 const conflictNotice = "Дані змінилися в іншій вкладці. Новішу версію завантажено, щоб не перезаписати зміни.";
 
@@ -66,7 +67,7 @@ export function useDocument() {
       return;
     }
     try {
-      const result = writeCollection(localStorage, persistedRaw.current, next.collection, () => crypto.randomUUID());
+      const result = writeCollection(localStorage, persistedRaw.current, next.collection, createId);
       if (result.kind === "conflict") {
         persistedRaw.current = result.raw;
         awaitingExternalRender.current = true;
@@ -90,13 +91,13 @@ export function useDocument() {
   const duplicate = (copyName?: string) => {
     try {
       const current = stateRef.current;
-      const document = cloneDocument(current.document, () => crypto.randomUUID(), copyName ?? `Копія — ${current.document.root?.name ?? ""}`);
+      const document = cloneDocument(current.document, createId, copyName ?? `Копія — ${current.document.root?.name ?? ""}`);
       return send({ type: "replace", collection: putDocument(current.collection, document), notice: "Копію створено. Її можна змінювати незалежно від оригіналу." });
     } catch (error) { return error instanceof Error ? error.message : "Не вдалося створити копію."; }
   };
   const importCollection = (incoming: Collection) => {
     try {
-      return send({ type: "replace", collection: appendImported(stateRef.current.collection, incoming, () => crypto.randomUUID()), notice: `Імпортовано цілих: ${incoming.documents.length}. Попередні цілі залишилися.` });
+      return send({ type: "replace", collection: appendImported(stateRef.current.collection, incoming, createId), notice: `Імпортовано цілих: ${incoming.documents.length}. Попередні цілі залишилися.` });
     } catch (error) { return error instanceof Error ? error.message : "Не вдалося імпортувати копію."; }
   };
 

@@ -38,14 +38,14 @@ export default function WorkspaceDialogs({ nodes, visibility, actions }: Props) 
   const { onOpenAction, onMove, onDuplicate, onAddPart, onEditNode, onDeleteWhole, onDeletePart, onImport } = actions;
   const { t, formatNumber } = usePreferences();
   return <>
-        {actionNode && root && <Modal title={actionNode.name} onClose={() => onActionsId(null)} variant="sheet">
+        {actionNode && root && <Modal title={actionNode.name} onClose={() => onActionsId(null)} variant="sheet" nonModal>
           <p className="mb-5 text-sm text-neutral-400"><NodeMetadata node={actionNode} />{isMeasuredNode(actionNode) && actionNode.children.length ? t(" · частин: {p0}", {p0: actionNode.children.length}) : ""}</p>
           <div className="action-sheet-list">
             {actionNode.id !== current?.id && <button type="button" onClick={onOpenAction}><Icon name="resource" /><span>{t("Відкрити частину")}</span><Icon name="chevron" width="16" height="16" /></button>}
             <button type="button" onClick={() => { onActionsId(null); onEditingId(actionNode.id); }}><Icon name="edit" /><span>{actionNode.id === root.id ? t("Редагувати ціле") : t("Редагувати частину")}</span></button>
             {actionParent && <>
-              <button type="button" disabled={actionIndex <= 0} onClick={() => onMove("up")}><Icon name="back" style={{ transform: "rotate(90deg)" }} /><span>{t("Перемістити вище")}</span></button>
-              <button type="button" disabled={actionIndex >= actionParent.children.length - 1} onClick={() => onMove("down")}><Icon name="back" style={{ transform: "rotate(-90deg)" }} /><span>{t("Перемістити нижче")}</span></button>
+              <button type="button" disabled={actionIndex <= 0} onClick={() => { onMove("up"); onActionsId(null); }}><Icon name="back" style={{ transform: "rotate(90deg)" }} /><span>{t("Перемістити вище")}</span></button>
+              <button type="button" disabled={actionIndex >= actionParent.children.length - 1} onClick={() => { onMove("down"); onActionsId(null); }}><Icon name="back" style={{ transform: "rotate(-90deg)" }} /><span>{t("Перемістити нижче")}</span></button>
             </>}
             {actionNode.id === root.id && <button type="button" disabled={count >= MAX_DOCUMENTS} onClick={onDuplicate}><Icon name="copy" /><span>{t("Створити копію цілого")}</span></button>}
             <button type="button" className="action-danger" onClick={() => { onActionsId(null); if (actionNode.id === root.id) onDeletingWhole(true); else onDeletingId(actionNode.id); }}><Icon name="trash" /><span>{actionNode.id === root.id ? t("Видалити ціле") : t("Видалити частину")}</span></button>
