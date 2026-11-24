@@ -56,10 +56,17 @@ export function movePart(root: Node, id: string, direction: "up" | "down"): Node
   if (!parent) return root;
   const index = parent.children.findIndex(child => child.id === id);
   const target = index + (direction === "up" ? -1 : 1);
-  if (target < 0 || target >= parent.children.length) return root;
+  return movePartTo(root, id, target);
+}
+
+export function movePartTo(root: Node, id: string, target: number): Node {
+  const parent = findParent(root, id);
+  if (!parent) return root;
+  const index = parent.children.findIndex(child => child.id === id);
+  if (!Number.isInteger(target) || target < 0 || target >= parent.children.length || target === index) return root;
   return updateNodeById(root, parent.id, node => {
     const children = [...node.children];
-    [children[index], children[target]] = [children[target], children[index]];
+    children.splice(target, 0, children.splice(index, 1)[0]);
     return { ...node, children };
   });
 }

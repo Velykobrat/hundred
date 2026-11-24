@@ -274,8 +274,16 @@ svg { flex-shrink: 0; }
 .structural-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; }
 .whole-screen { touch-action: pan-y pinch-zoom; }
 .structural-card { position: relative; min-height: 140px; overflow-wrap: anywhere; }
-.structural-card-open { width: 100%; min-height: 136px; padding: 20px 56px 20px 20px; text-align: left; display: flex; flex-direction: column; gap: 12px; user-select: none; -webkit-touch-callout: none; }
+.structural-card-open { width: 100%; min-height: 136px; padding: 20px 100px 20px 20px; text-align: left; display: flex; flex-direction: column; gap: 12px; user-select: none; -webkit-touch-callout: none; }
 .structural-card-actions { position: absolute; top: 8px; right: 8px; border: 0; background: transparent; }
+.part-lock { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 10px; color: var(--muted); opacity: .65; }
+.part-lock[aria-pressed="true"] { color: var(--accent); opacity: 1; }
+.part-lock[aria-pressed="true"] svg { filter: drop-shadow(0 0 3px var(--accent)); }
+.structural-card > .part-lock { position: absolute; top: 8px; right: 52px; }
+.is-reordering .structural-card { outline: 1px solid var(--accent); animation: reorder-jiggle .32s ease-in-out infinite alternate; }
+.is-reordering .structural-card-open { touch-action: none; cursor: grab; }
+@keyframes reorder-jiggle { from { transform: rotate(-1deg); } to { transform: rotate(1deg); } }
+@media (prefers-reduced-motion: reduce) { .is-reordering .structural-card { animation: none; } }
 .structural-card-actions.icon-button:hover:not(:disabled) { background: transparent; }
 .structural-card span { color: var(--muted); font-size: 13px; }
 

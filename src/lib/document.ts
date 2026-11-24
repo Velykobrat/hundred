@@ -90,9 +90,11 @@ export function decodeDocument(raw: string): Document {
     ids.add(node.id);
     if (node.color !== undefined && !isNodeColor(node.color)) throw new Error("Некоректний колір.");
     if (node.icon !== undefined && !isNodeIcon(node.icon)) throw new Error("Некоректний значок.");
+    if (node.locked !== undefined && typeof node.locked !== "boolean") throw new Error("Некоректний стан фіксації.");
     const appearance = {
       ...(node.color === undefined ? {} : { color: node.color as NodeColor }),
       ...(node.icon === undefined ? {} : { icon: node.icon as NodeIcon }),
+      ...(node.locked === undefined ? {} : { locked: node.locked as boolean }),
     };
     if (mode === "structural") {
       if (expectedUnit !== undefined || typeof node.weight !== "number" || !Number.isFinite(node.weight) || node.weight <= 0)

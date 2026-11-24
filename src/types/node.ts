@@ -4,6 +4,7 @@ import type { NodeIcon } from "../lib/node-icon";
 type BaseNode = {
   id: string;
   name: string;
+  locked?: boolean;
   color?: NodeColor;
   icon?: NodeIcon;
   children: Node[];

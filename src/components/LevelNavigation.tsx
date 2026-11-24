@@ -21,9 +21,9 @@ export default function LevelNavigation({ path, onNavigate, showingPath, onShowP
       {parent ? <button type="button" className="parent-link" onClick={() => goTo(path.slice(0, -1).map((node) => node.id))} aria-label={t("До батьківського рівня «{p0}»", {p0: parent.name})}>
         <Icon name="back" /><span><span className="parent-link-caption">{t("На рівень вище")}</span><span className="parent-link-name">{parent.name}</span></span>
       </button> : <span className="level-root"><Icon name="resource" /><span>{t("Усе ціле")}</span></span>}
-      <button type="button" className="level-path-button" onClick={() => onShowPath(true)} aria-label={t("Відкрити навігацію по рівнях")}><Icon name="layers" /><span>{t("Рівні")}{path.length > 1 ? ` · ${path.length}` : ""}</span></button>
+      <button type="button" data-levels-trigger className="level-path-button" onClick={() => onShowPath(!showingPath)} aria-label={t("Відкрити навігацію по рівнях")} aria-expanded={showingPath} aria-haspopup="dialog"><Icon name="layers" /><span>{t("Рівні")}{path.length > 1 ? ` · ${path.length}` : ""}</span></button>
     </nav>
-    {showingPath && <Modal title={t("Рівні цілого")} onClose={() => onShowPath(false)} variant="sheet">
+    {showingPath && <Modal title={t("Рівні цілого")} onClose={() => onShowPath(false)} variant="sheet" nonModal>
       <p className="mb-4 text-sm text-neutral-400">{t("Обери рівень або іншу частину поруч.")}</p>
       <nav aria-label={t("Шлях до поточної частини")}>
         <ol className="level-path-list">{path.map((node, index) => <li key={node.id}>

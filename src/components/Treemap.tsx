@@ -1,6 +1,7 @@
 import Icon from "./Icon";
 import { isMeasuredNode } from "../lib/node-mode";
 import NodeMetadata from "./NodeMetadata";
+import PartLock from "./PartLock";
 
 import { usePreferences } from "../lib/use-preferences";
 
@@ -8,32 +9,52 @@ import type { Node, LayoutItem } from "../types/node";
 import { createTreemap } from "../lib/treemap";
 import { remaining } from "../lib/document";
 import { getNodeColor } from "../lib/format";
-import { useEffect, useId, useRef, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
 
 const LONG_PRESS_MS = 500;
 const LONG_PRESS_MOVE_TOLERANCE = 10;
 
-function StructuralCard({ child, onOpen, onActions }: { child: Node; onOpen: (node: Node) => void; onActions: (id: string) => void }) {
+function StructuralCard({ child, active, onOpen, onActions, onToggleLock, onStart, onMove, onEnd }: { child: Node; active: boolean; onOpen: (node: Node) => void; onActions: (id: string) => void; onToggleLock: (node: Node) => void; onStart: (id: string) => void; onMove: (x: number, y: number) => void; onEnd: (cancelled: boolean) => void }) {
   const { t } = usePreferences();
   const metadataId = useId();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pointer = useRef<{ id: number; x: number; y: number } | null>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const moveRef = useRef(onMove);
+  useEffect(() => { moveRef.current = onMove; }, [onMove]);
+  const pointer = useRef<{ id: number; x: number; y: number; dragging: boolean } | null>(null);
   const suppressClick = useRef(false);
   function clearTimer() {
     if (timer.current !== null) clearTimeout(timer.current);
     timer.current = null;
   }
   useEffect(() => () => clearTimer(), []);
+  useEffect(() => {
+    const element = button.current;
+    if (!element) return;
+    const touchMove = (event: TouchEvent) => {
+      if (!pointer.current?.dragging) return;
+      const touch = event.touches[0];
+      if (!touch) return;
+      event.preventDefault();
+      moveRef.current(touch.clientX, touch.clientY);
+    };
+    element.addEventListener("touchmove", touchMove, { passive: false });
+    return () => element.removeEventListener("touchmove", touchMove);
+  }, []);
   function start(event: PointerEvent<HTMLButtonElement>) {
-    if ((event.pointerType !== "touch" && event.pointerType !== "pen") || !event.isPrimary) return;
+    if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
     suppressClick.current = false;
     clearTimer();
-    pointer.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    const element = event.currentTarget;
+    pointer.current = { id: event.pointerId, x: event.clientX, y: event.clientY, dragging: active };
+    if (active) { suppressClick.current = true; element.setPointerCapture(event.pointerId); onStart(child.id); return; }
     const pointerId = event.pointerId;
     timer.current = setTimeout(() => {
       timer.current = null;
       suppressClick.current = true;
-      pointer.current = null;
+      if (!pointer.current) return;
+      pointer.current.dragging = true;
+      if (element.isConnected) element.setPointerCapture(pointerId);
       // The newly opened sheet can appear under the still-pressed finger.
       // Do not let the release activate an action in that sheet.
       const cleanup = () => {
@@ -58,40 +79,73 @@ function StructuralCard({ child, onOpen, onActions }: { child: Node; onOpen: (no
       document.addEventListener("click", blockReleaseClick, true);
       document.addEventListener("pointerup", finish, true);
       document.addEventListener("pointercancel", finish, true);
-      onActions(child.id);
+      onStart(child.id);
     }, LONG_PRESS_MS);
   }
   function move(event: PointerEvent<HTMLButtonElement>) {
     const start = pointer.current;
+    if (start && start.id === event.pointerId && start.dragging) { onMove(event.clientX, event.clientY); return; }
     if (start && start.id === event.pointerId && Math.hypot(event.clientX - start.x, event.clientY - start.y) > LONG_PRESS_MOVE_TOLERANCE) {
       clearTimer();
       pointer.current = null;
       suppressClick.current = true;
     }
   }
-  function end(event: PointerEvent<HTMLButtonElement>) {
-    if (pointer.current?.id === event.pointerId) pointer.current = null;
+  function end(event: PointerEvent<HTMLButtonElement>, cancelled = false) {
+    if (pointer.current?.id === event.pointerId) { const dragging = pointer.current.dragging; pointer.current = null; if (dragging) onEnd(cancelled); }
     clearTimer();
   }
-  return <div className="surface structural-card" style={{ borderTop: "4px solid " + getNodeColor(child) }}>
-    <button type="button" className="structural-card-open" aria-label={t("Відкрити «{p0}»", {p0: child.name})} aria-describedby={isMeasuredNode(child) ? metadataId : undefined}
-      onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end}
+  return <div data-reorder-id={child.id} className="surface structural-card" style={{ borderTop: "4px solid " + getNodeColor(child) }}>
+    <button ref={button} type="button" className="structural-card-open" aria-label={t("Відкрити «{p0}»", {p0: child.name})} aria-disabled={Boolean(child.locked)} aria-describedby={isMeasuredNode(child) ? metadataId : undefined}
+      onPointerDown={start} onPointerMove={move} onPointerUp={event => end(event)} onPointerCancel={event => end(event, true)}
       onContextMenu={(event) => event.preventDefault()}
       onClick={(event) => {
         if (suppressClick.current && event.detail !== 0) { suppressClick.current = false; return; }
-        onOpen(child);
+        if (!active && !child.locked) onOpen(child);
       }}>
       <span className="structural-card-title">{child.icon && <Icon name={child.icon} style={{ color: getNodeColor(child) }} />}<strong>{child.name}</strong></span>{isMeasuredNode(child) && <span id={metadataId}><NodeMetadata node={child} /></span>}
     </button>
+    <PartLock node={child} onToggle={onToggleLock} />
     <button type="button" data-actions-trigger className="icon-button structural-card-actions" aria-label={t("Дії для «{p0}»", {p0: child.name})} onClick={() => onActions(child.id)}><Icon name="more" /></button>
   </div>;
 }
 
-export default function Treemap({ node, onOpen, onActions }: { node: Node; onOpen: (node: Node) => void; onActions: (id: string) => void }) {
-  const { t, formatNumber, formatPercent } = usePreferences();
-  if (!isMeasuredNode(node)) return <section aria-label={t("Структура частин")} className="structural-grid">
-    {node.children.map(child => <StructuralCard key={child.id} child={child} onOpen={onOpen} onActions={onActions} />)}
+type Props = { node: Node; onOpen: (node: Node) => void; onActions: (id: string) => void; onToggleLock: (node: Node) => void; onReorder: (id: string, target: number) => void; onReorderStart: () => void };
+function StructuralGrid({ node, onOpen, onActions, onToggleLock, onReorder, onReorderStart }: Props) {
+  const { t } = usePreferences();
+  const [active, setActive] = useState(false);
+  const grid = useRef<HTMLElement>(null);
+  const dragged = useRef<string | null>(null);
+  const target = useRef(-1);
+  useEffect(() => {
+    if (!active) return;
+    const outside = (event: globalThis.PointerEvent) => { if (event.target instanceof globalThis.Node && !grid.current?.contains(event.target)) setActive(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setActive(false); };
+    document.addEventListener("pointerdown", outside, true);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("pointerdown", outside, true); document.removeEventListener("keydown", escape); };
+  }, [active]);
+  function start(id: string) { dragged.current = id; target.current = node.children.findIndex(child => child.id === id); setActive(true); onReorderStart(); }
+  function move(x: number, y: number) {
+    const card = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-reorder-id]");
+    if (!card || !grid.current?.contains(card)) return;
+    const index = node.children.findIndex(child => child.id === card.dataset.reorderId);
+    if (index >= 0) target.current = index;
+  }
+  function end(cancelled: boolean) {
+    const id = dragged.current; dragged.current = null;
+    if (cancelled) { setActive(false); return; }
+    if (id && target.current >= 0 && node.children.findIndex(child => child.id === id) !== target.current) { onReorder(id, target.current); setActive(false); }
+  }
+  return <section ref={grid} aria-label={t("Структура частин")} className={`structural-grid${active ? " is-reordering" : ""}`}>
+    {active && <span className="sr-only" role="status">{t("Режим перестановки")}</span>}
+    {node.children.map(child => <StructuralCard key={child.id} child={child} active={active} onOpen={onOpen} onActions={onActions} onToggleLock={onToggleLock} onStart={start} onMove={move} onEnd={end} />)}
   </section>;
+}
+
+export default function Treemap({ node, onOpen, onActions, onToggleLock, onReorder, onReorderStart }: Props) {
+  const { t, formatNumber, formatPercent } = usePreferences();
+  if (!isMeasuredNode(node)) return <StructuralGrid key={node.id} node={node} onOpen={onOpen} onActions={onActions} onToggleLock={onToggleLock} onReorder={onReorder} onReorderStart={onReorderStart} />;
   const totalValue = node.value;
   const free = remaining(node);
   const items: LayoutItem[] = node.children.map((child) => ({ node: child, x: 0, y: 0, width: 0, height: 0 }));
@@ -130,10 +184,11 @@ export default function Treemap({ node, onOpen, onActions }: { node: Node; onOpe
                     key={node.id}
                     type="button"
                     disabled={isRemaining}
+                    aria-disabled={isRemaining || Boolean(node.locked)}
                     aria-label={`${node.name}: ${formatNumber(node.value)} ${node.unit}, ${formatPercent(node.value / totalValue * 100)}${isRemaining ? "" : t(". Відкрити частину")}`}
                     title={`${node.name} · ${formatNumber(node.value)} ${node.unit}`}
                     onClick={() => {
-                      if (!isRemaining) {
+                      if (!isRemaining && !node.locked) {
                         onOpen(node);
                       }
                     }}

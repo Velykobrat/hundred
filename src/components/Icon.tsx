@@ -1,8 +1,9 @@
 import type { ReactNode, SVGProps } from "react";
 
-export type IconName = "search" | "home" | "resource" | "settings" | "back" | "chevron" | "more" | "edit" | "trash" | "copy" | "download" | "upload" | "plus" | "layers" | "money" | "clock" | "people" | "project" | "folder" | "target" | "book" | "briefcase" | "heart" | "star" | "bolt" | "globe" | "coffee" | "shield" | "list";
+export type IconName = "search" | "home" | "resource" | "settings" | "back" | "chevron" | "more" | "edit" | "trash" | "copy" | "download" | "upload" | "plus" | "layers" | "money" | "clock" | "people" | "project" | "folder" | "target" | "book" | "briefcase" | "heart" | "star" | "bolt" | "globe" | "coffee" | "shield" | "list" | "lock";
 
 const paths: Record<IconName, ReactNode> = {
+  lock: <><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" /></>,
   search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></>,
   list: <><path d="M8 6h13M8 12h13M8 18h13" /><circle cx="3" cy="6" r=".5" /><circle cx="3" cy="12" r=".5" /><circle cx="3" cy="18" r=".5" /></>,
   book: <><path d="M12 5v16M3 4c3-1 6-1 9 1 3-2 6-2 9-1v15c-3-1-6-1-9 2-3-3-6-3-9-2z" /></>,

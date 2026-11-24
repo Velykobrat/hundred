@@ -9,7 +9,8 @@ type Props = { count: number; storageError: string | null; canExport: boolean; o
 export default function SettingsPanel({ count, storageError, canExport, onExport, onImport }: Props) {
   const { t, language, theme, setLanguage, setTheme, preferenceError } = usePreferences();
   return <section className="settings-panel" aria-labelledby="settings-heading">
-    <header className="screen-heading"><p className="eyebrow">{t("Твій Hundred")}</p><h1 id="settings-heading">{t("Налаштування")}</h1><p>{t("Збереження та перенесення твоїх цілих.")}</p></header>
+    <header className="screen-heading"><p className="eyebrow">{t("Твій Hundred")}</p><h1 id="settings-heading">{t("Налаштування")}</h1></header>
+    <BeginnerGuide />
     <section className="surface settings-section" aria-labelledby="appearance-heading">
       <div className="settings-section-heading"><Icon name="settings" /><h2 id="appearance-heading">{t("Вигляд")}</h2></div>
       <label htmlFor="hundred-language" className="preference-label">{t("Мова інтерфейсу")}</label>
@@ -41,7 +42,5 @@ export default function SettingsPanel({ count, storageError, canExport, onExport
         <button type="button" onClick={onImport}><Icon name="upload" /><span><span>{t("Імпортувати файл")}</span><span>{t("Додати цілі з резервної копії")}</span></span><Icon name="chevron" width="16" height="16" /></button>
       </div>
     </section>
-    <BeginnerGuide />
-    <p className="settings-footnote">{t("Очищення даних сайту видалить локальні цілі. Імпорт додає копії та зберігає наявні цілі.")}</p>
   </section>;
 }

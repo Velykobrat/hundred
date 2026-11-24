@@ -50,19 +50,68 @@ test("actions dismiss via backdrop, repeated trigger location, Escape and select
   await expect(otherMenu).toHaveCount(0);
 });
 
-test("outside controls act on the same tap while actions are open", async ({ page }) => {
+test("actions menu consumes the first tap on outside controls", async ({ page }) => {
   await createWhole(page, "Company");
   await addPart(page, "Development");
   const actions = page.getByRole("button", { name: "Дії для «Company»" });
+  const levelsButton = page.getByRole("button", { name: "Відкрити навігацію по рівнях" });
+  const levelsBox = (await levelsButton.boundingBox())!;
   await actions.tap();
   await expect(page.getByRole("dialog", { name: "Company" })).toBeVisible();
-  await page.getByRole("button", { name: "Відкрити навігацію по рівнях" }).tap();
+  await page.touchscreen.tap(levelsBox.x + levelsBox.width / 2, levelsBox.y + levelsBox.height / 2);
   await expect(page.getByRole("dialog", { name: "Company" })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "Рівні цілого" })).toHaveCount(0);
+  await levelsButton.tap();
   await expect(page.getByRole("dialog", { name: "Рівні цілого" })).toBeVisible();
   await page.keyboard.press("Escape");
+  const home = page.getByRole("button", { name: "Головна", exact: true });
+  const homeBox = (await home.boundingBox())!;
   await actions.tap();
-  await page.getByRole("button", { name: "Головна", exact: true }).tap();
+  await page.touchscreen.tap(homeBox.x + homeBox.width / 2, homeBox.y + homeBox.height / 2);
+  await expect(page.getByRole("heading", { name: "Company", level: 1 })).toBeVisible();
+  await home.tap();
   await expect(page.getByRole("button", { name: "Відкрити ціле «Company»" })).toBeVisible();
+});
+
+test("Levels consumes the first outside tap before navigation or actions", async ({ page }) => {
+  await createWhole(page, "Company");
+  await addPart(page, "Development");
+  await page.getByRole("button", { name: "Відкрити «Development»" }).tap();
+  const trigger = page.getByRole("button", { name: "Відкрити навігацію по рівнях" });
+  const parent = page.getByRole("button", { name: "До батьківського рівня «Company»" });
+  const parentBox = (await parent.boundingBox())!;
+  const triggerBox = (await trigger.boundingBox())!;
+  const levels = page.getByRole("dialog", { name: "Рівні цілого" });
+  await trigger.tap();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(levels).toBeVisible();
+  await page.touchscreen.tap(5, 5);
+  await expect(levels).toHaveCount(0);
+  await trigger.tap();
+  await page.touchscreen.tap(triggerBox.x + triggerBox.width / 2, triggerBox.y + triggerBox.height / 2);
+  await expect(levels).toHaveCount(0);
+  await trigger.tap();
+  await page.keyboard.press("Escape");
+  await expect(levels).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await trigger.tap();
+  await page.touchscreen.tap(parentBox.x + parentBox.width / 2, parentBox.y + parentBox.height / 2);
+  await expect(levels).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Development", level: 1 })).toBeVisible();
+  await parent.tap();
+  await expect(page.getByRole("heading", { name: "Company", level: 1 })).toBeVisible();
+});
+
+test("Settings puts the guide first and omits redundant copy in both languages", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Налаштування", exact: true }).tap();
+  await expect(page.locator(".settings-panel > section h2")).toHaveText(["Як користуватися Hundred", "Вигляд", "Дані на цьому пристрої", "Резервні копії"]);
+  await expect(page.getByText("Збереження та перенесення твоїх цілих.")).toHaveCount(0);
+  await expect(page.getByText("Очищення даних сайту видалить локальні цілі. Імпорт додає копії та зберігає наявні цілі.")).toHaveCount(0);
+  await page.getByLabel("Мова інтерфейсу").selectOption("en");
+  await expect(page.locator(".settings-panel > section h2")).toHaveText(["How to use Hundred", "Appearance", "Data on this device", "Backups"]);
+  await expect(page.getByText("Save and transfer your wholes.")).toHaveCount(0);
+  await expect(page.getByText("Clearing site data will delete local wholes. Import adds copies and keeps existing wholes.")).toHaveCount(0);
 });
 
 test("mobile floating add follows the regular action and avoids navigation", async ({ page }) => {

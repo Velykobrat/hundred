@@ -40,7 +40,7 @@ test("structural cards and list are exclusive and a quick tap opens a part", asy
   await expect(page.getByRole("heading", { name: "Development", level: 1 })).toBeVisible();
 });
 
-test("long press opens actions without navigation and movement cancels the press", async ({ page }) => {
+test("long press enters reorder mode without navigation and movement cancels the press", async ({ page }) => {
   await createWhole(page, "Company");
   await addPart(page, "Development");
   const card = page.getByRole("button", { name: "Відкрити «Development»" });
@@ -48,7 +48,8 @@ test("long press opens actions without navigation and movement cancels the press
   const box = (await card.boundingBox())!;
   const point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   await touchSequence(page, point, point, 600);
-  await expect(page.getByRole("dialog", { name: "Development" })).toBeVisible();
+  await expect(page.locator(".structural-grid")).toHaveClass(/is-reordering/);
+  await expect(page.getByRole("dialog", { name: "Development" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Company", level: 1 })).toBeVisible();
   await page.keyboard.press("Escape");
   await card.dispatchEvent("click", { detail: 1 });
@@ -57,7 +58,7 @@ test("long press opens actions without navigation and movement cancels the press
   await card.dispatchEvent("pointermove", { pointerType: "touch", pointerId: 8, isPrimary: true, clientX: 150, clientY: 312 });
   await page.waitForTimeout(600);
   await card.dispatchEvent("pointerup", { pointerType: "touch", pointerId: 8, isPrimary: true, clientX: 150, clientY: 312 });
-  await expect(page.getByRole("dialog", { name: "Development" })).toHaveCount(0);
+  await expect(page.locator(".structural-grid")).not.toHaveClass(/is-reordering/);
   await expect(page.getByRole("heading", { name: "Company", level: 1 })).toBeVisible();
 });
 
@@ -126,7 +127,7 @@ test("swipe works at the top, middle and bottom of Whole content", async ({ page
   }
 });
 
-test("long press followed by an edge drag opens only the actions menu", async ({ page }) => {
+test("long press followed by an edge drag stays in reorder mode", async ({ page }) => {
   await createWhole(page, "Company");
   await addPart(page, "Development");
   await page.getByRole("button", { name: "Відкрити «Development»" }).click();
@@ -137,11 +138,11 @@ test("long press followed by an edge drag opens only the actions menu", async ({
   const cdp = await page.context().newCDPSession(page);
   try {
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 20, y: box.y + box.height / 2 }] });
-    await expect(page.getByRole("dialog", { name: "Frontend" })).toBeVisible({ timeout: 2000 });
+    await expect(page.locator(".structural-grid")).toHaveClass(/is-reordering/, { timeout: 2000 });
     await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 130, y: box.y + box.height / 2 }] });
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await expect(page.getByRole("heading", { name: "Development", level: 1 })).toBeVisible();
-    await expect(page.getByRole("dialog", { name: "Frontend" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Frontend" })).toHaveCount(0);
   } finally {
     await cdp.detach();
   }
@@ -168,6 +169,8 @@ test("keyboard users can open a card and its actions", async ({ page }) => {
   await page.locator("body").click({ position: { x: 1, y: 1 } });
   for (let i = 0; i < 30 && !(await open.evaluate(el => el === document.activeElement)); i++) await page.keyboard.press("Tab");
   await expect(open).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: "Зафіксувати частину" })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(actions).toBeFocused();
   await expect(actions).toHaveCSS("outline-style", "solid");

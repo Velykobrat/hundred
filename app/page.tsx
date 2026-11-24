@@ -9,7 +9,7 @@ import type { NodeIcon } from "../src/lib/node-icon";
 import { isMeasuredNode } from "../src/lib/node-mode";
 import { createId } from "../src/lib/id";
 import type { Node } from "../src/types/node";
-import { findNodeById, countDescendants as countParts, findParent, movePart } from "../src/lib/tree";
+import { findNodeById, countDescendants as countParts, findParent, movePart, movePartTo, updateNodeById } from "../src/lib/tree";
 import { addPart, createNode, deletePart, editPart, remaining, sumValues, units } from "../src/lib/document";
 import { encodeCollection, MAX_DOCUMENTS, type Collection } from "../src/lib/collection";
 import { useDocument } from "../src/lib/use-document";
@@ -68,13 +68,28 @@ function Workspace() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }
   function goToPath(next: string[]) {
+    if (next.length > 1 && root && findNodeById(root, next.at(-1)!)?.locked) return;
     clearDialogs();
     workspace.navigate(next);
     setScreen("resource");
     window.scrollTo({ top: 0, behavior: "instant" });
   }
   function openNode(node: Node) {
+    if (node.locked) return;
     goToPath([...pathIds, node.id]);
+  }
+  function toggleLock(node: Node) {
+    if (!root) return;
+    const nextRoot = updateNodeById(root, node.id, previous => ({ ...previous, locked: !previous.locked }));
+    const issue = workspace.change({ root: nextRoot, pathIds }, t(node.locked ? "Фіксацію знято." : "Частину зафіксовано."));
+    if (issue) setActionError(issue);
+  }
+  function reorderPart(id: string, target: number) {
+    if (!root || !current || !current.children.some(child => child.id === id)) return;
+    const nextRoot = movePartTo(root, id, target);
+    if (nextRoot === root) return;
+    const issue = workspace.change({ root: nextRoot, pathIds }, t("Порядок частин змінено."));
+    if (issue) setActionError(issue);
   }
   function moveActionPart(direction: "up" | "down") {
     if (!root || !actionNode) return;
@@ -88,6 +103,8 @@ function Workspace() {
     goToScreen("resource");
   }
   function openSearchResult(id: string, nextPath: string[]) {
+    const document = workspace.collection.documents.find(item => item.root?.id === id);
+    if (nextPath.length > 1 && document?.root && findNodeById(document.root, nextPath.at(-1)!)?.locked) return;
     const issue = workspace.open(id, nextPath);
     if (issue) { setActionError(issue); return; }
     goToScreen("resource");
@@ -137,6 +154,7 @@ function Workspace() {
   }
   function openActionNode() {
     if (!root || !actionNode) return;
+    if (actionNode.locked) { setActionsId(null); return; }
     const actionParent = findParent(root, actionNode.id);
     const parentIndex = path.findIndex((node) => node.id === actionParent?.id);
     if (parentIndex >= 0) goToPath([...path.slice(0, parentIndex + 1).map((node) => node.id), actionNode.id]);
@@ -193,7 +211,7 @@ function Workspace() {
         {screen === "resource" && (!root ? (
           <CreateWholeScreen count={workspace.collection.documents.length} onCancel={() => goToScreen("home")} onSubmit={handleCreateWhole} />
         ) : current ? (
-          <WholeScreen root={root} current={current} path={path} showingPath={showingPath} free={free} used={used} atLimit={atLimit} onNavigate={goToPath} onHome={() => goToScreen("home")} onShowPath={setShowingPath} onActions={(id) => setActionsId((previous) => previous === id ? null : id)} onAdd={() => setAdding(true)} onOpen={openNode} />
+          <WholeScreen root={root} current={current} path={path} showingPath={showingPath} free={free} used={used} atLimit={atLimit} onNavigate={goToPath} onHome={() => goToScreen("home")} onShowPath={setShowingPath} onActions={(id) => setActionsId((previous) => previous === id ? null : id)} onAdd={() => setAdding(true)} onOpen={openNode} onToggleLock={toggleLock} onReorder={reorderPart} />
         ) : <p role="alert">{t("Не вдалося відкрити частину.")}{" "}<button type="button" onClick={() => goToPath([root.id])} className="underline">{t("Повернутися до цілого")}</button></p>)}
 
         <WorkspaceDialogs

@@ -15,10 +15,43 @@ const { decodeCollection, encodeCollection, emptyCollection, cloneDocument, putD
 const { decodeStoredCollection, writeCollection, InvalidStoredCollection } = await import(new URL('collection-storage.mjs', temp));
 const { parsePercent, percentToValue, valueToPercent } = await import(new URL('percentage.mjs', temp));
 const { createId } = await import(new URL('id.mjs', temp));
+const { updateNodeById, movePartTo } = await import(new URL('tree.mjs', temp));
 const node = (id, value, children = []) => ({ mode: 'measured', id, name: id, value, unit: 'грн', children });
 const root = node('root', 100, [node('a', 60, [node('nested', 25)]), node('b', 30)]);
 let tested = 0;
 function check(name, callback) { callback(); tested++; console.log(`PASS ${name}`); }
+check('Lock state remains compatible with legacy data, backups, imports and copies', () => {
+  const legacy = decodeDocument(encodeDocument({ root, pathIds: ['root'] }));
+  assert.equal(Boolean(legacy.root.children[0].locked), false);
+  const locked = updateNodeById(root, 'a', n => ({ ...n, locked: true }));
+  const collection = putDocument(emptyCollection, { root: locked, pathIds: ['root'] });
+  const decoded = decodeCollection(encodeCollection(collection));
+  assert.equal(decoded.documents[0].root.children[0].locked, true);
+  let id = 0;
+  const copy = cloneDocument(decoded.documents[0], () => `copy-${++id}`);
+  assert.equal(copy.root.children[0].locked, true);
+  const imported = appendImported(emptyCollection, decoded, () => `import-${++id}`);
+  assert.equal(imported.documents[0].root.children[0].locked, true);
+  const unlocked = updateNodeById(locked, 'a', n => ({ ...n, locked: false }));
+  assert.equal(decodeDocument(encodeDocument({ root: unlocked, pathIds: ['root'] })).root.children[0].locked, false);
+  const invalid = updateNodeById(root, 'a', n => ({ ...n, locked: 'yes' }));
+  assert.throws(() => decodeDocument(encodeDocument({ root: invalid, pathIds: ['root'] })));
+});
+check('Lock changes support undo and redo; moving a locked part preserves its subtree', () => {
+  const document = { root, pathIds: ['root'] };
+  const locked = updateNodeById(root, 'a', n => ({ ...n, locked: true }));
+  let state = documentReducer(initialState, { type: 'load', document });
+  state = documentReducer(state, { type: 'change', document: { ...document, root: locked }, notice: '' });
+  assert.equal(state.document.root.children[0].locked, true);
+  state = documentReducer(state, { type: 'undo' });
+  assert.equal(Boolean(state.document.root.children[0].locked), false);
+  state = documentReducer(state, { type: 'redo' });
+  assert.equal(state.document.root.children[0].locked, true);
+  const moved = movePartTo(locked, 'a', 1);
+  assert.deepEqual(moved.children.map(child => child.id), ['b', 'a']);
+  assert.deepEqual(moved.children[1], locked.children[0]);
+  assert.equal(movePartTo(locked, 'a', 9), locked);
+});
 check('ID generation uses randomUUID when available', () => {
   const original = globalThis.crypto;
   try {

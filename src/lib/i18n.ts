@@ -2,6 +2,11 @@ export type Language = "uk" | "en";
 export type Theme = "dark" | "light" | "system";
 export type TranslationParams = Record<string, string | number>;
 export const english: Record<string, string> = {
+  "Зафіксувати частину": "Lock Part",
+  "Зняти фіксацію": "Unlock Part",
+  "Частину зафіксовано.": "Part locked.",
+  "Фіксацію знято.": "Part unlocked.",
+  "Режим перестановки": "Reorder mode",
   "Нагадування про резервну копію": "Backup reminder",
   "Дані Hundred зберігаються лише в цьому браузері. Створи резервну копію, щоб зберегти свої цілі.": "Hundred data is stored only in this browser. Create a backup to keep your saved wholes safe.",
   "Завантажити копію": "Download backup",

@@ -14,8 +14,8 @@ import { useEffect, useRef, useState, type PointerEvent, type MouseEvent } from 
 const EDGE_START_PX = 120;
 const SWIPE_BACK_MIN_X = 70;
 const SWIPE_HORIZONTAL_DOMINANCE = 1.2;
-type Props = { root: Node; current: Node; path: Node[]; showingPath: boolean; free: number; used: number; atLimit: boolean; onNavigate: (path: string[]) => void; onHome: () => void; onShowPath: (show: boolean) => void; onActions: (id: string) => void; onAdd: () => void; onOpen: (node: Node) => void };
-export default function WholeScreen({ root, current, path, showingPath, free, used, atLimit, onNavigate, onHome, onShowPath, onActions, onAdd, onOpen }: Props) {
+type Props = { root: Node; current: Node; path: Node[]; showingPath: boolean; free: number; used: number; atLimit: boolean; onNavigate: (path: string[]) => void; onHome: () => void; onShowPath: (show: boolean) => void; onActions: (id: string) => void; onAdd: () => void; onOpen: (node: Node) => void; onToggleLock: (node: Node) => void; onReorder: (id: string, target: number) => void };
+export default function WholeScreen({ root, current, path, showingPath, free, used, atLimit, onNavigate, onHome, onShowPath, onActions, onAdd, onOpen, onToggleLock, onReorder }: Props) {
   const { t, formatNumber, formatPercent, structureView } = usePreferences();
   const swipe = useRef<{ id: number; x: number; y: number } | null>(null);
   const suppressClick = useRef(false);
@@ -80,12 +80,12 @@ export default function WholeScreen({ root, current, path, showingPath, free, us
               <div className="min-w-0">
                 <div className="map-heading"><h2>{isMeasuredNode(current) ? t("Карта цілого") : t("Структура частин")}</h2>{!isMeasuredNode(current) && <StructureViewToggle />}</div>
                 {!isMeasuredNode(current) && structureView === "list"
-                  ? <PartsList node={current} free={free} atLimit={atLimit} onOpen={onOpen} onActions={onActions} />
+                  ? <PartsList node={current} free={free} atLimit={atLimit} onOpen={onOpen} onActions={onActions} onToggleLock={onToggleLock} />
                   : !isMeasuredNode(current) && !current.children.length
                     ? <p className="parts-empty">{t("Тут поки немає частин.")}</p>
-                    : <Treemap node={current} onOpen={onOpen} onActions={openActions} />}
+                    : <Treemap node={current} onOpen={onOpen} onActions={openActions} onToggleLock={onToggleLock} onReorder={onReorder} onReorderStart={() => { swipe.current = null; }} />}
               </div>
-              {isMeasuredNode(current) && <aside><PartsList node={current} free={free} atLimit={atLimit} onOpen={onOpen} onActions={onActions} /></aside>}
+              {isMeasuredNode(current) && <aside><PartsList node={current} free={free} atLimit={atLimit} onOpen={onOpen} onActions={onActions} onToggleLock={onToggleLock} /></aside>}
             </div>
             {canAdd && !addButtonVisible && <button type="button" className="primary-button add-part-floating" aria-label={t("Додати частину")} onClick={onAdd}><Icon name="plus" /></button>}
           </div>
