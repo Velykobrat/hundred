@@ -2,6 +2,7 @@ import { expect, type Page } from "@playwright/test";
 
 export async function createWhole(page: Page, name: string, amount?: string) {
   await page.goto("/");
+  await expect(page.locator(".resource-library")).toBeVisible();
   const create = page.locator(".home-header-create");
   if (await create.isVisible()) await create.click();
   else await page.getByRole("button", { name: "Створити перше ціле" }).click();
