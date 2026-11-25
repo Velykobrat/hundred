@@ -4,7 +4,7 @@ import { runInNewContext } from 'node:vm';
 
 const worker = await readFile(new URL('../src/pwa/worker.js', import.meta.url), 'utf8');
 const origin = 'https://hundred.test';
-const build = { version: 'test', shell: '<html>Actual Hundred shell</html>', manifest: '{"name":"Hundred"}', assets: ['/_next/static/app.js', '/_next/static/app.css', '/_next/static/font.woff2', '/pwa-192.png'] };
+const build = { version: 'test', shell: '<html>Actual Hundred shell</html>', manifest: '{"name":"Hundred"}', assets: ['/_next/static/app.js', '/_next/static/app.css', '/_next/static/font.woff2', '/pwa-192.png', '/brand/bebetter-text.svg'] };
 
 function harness({ failAsset = false } = {}) {
   const listeners = new Map();

@@ -3,6 +3,7 @@ import { usePreferences } from "../lib/use-preferences";
 import { MAX_DOCUMENTS } from "../lib/collection";
 import Icon from "./Icon";
 import BeginnerGuide from "./BeginnerGuide";
+import { version } from "../../package.json";
 
 type Props = { count: number; storageError: string | null; canExport: boolean; onExport: () => void; onImport: () => void };
 
@@ -42,5 +43,12 @@ export default function SettingsPanel({ count, storageError, canExport, onExport
         <button type="button" onClick={onImport}><Icon name="upload" /><span><span>{t("Імпортувати файл")}</span><span>{t("Додати цілі з резервної копії")}</span></span><Icon name="chevron" width="16" height="16" /></button>
       </div>
     </section>
+    <footer className="settings-signature">
+      <div><strong>Hundred · v{version}</strong><span className="maker">by <a href="https://bebetter-development.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label={t("Відкрити сайт BeBetter")}><span className="sr-only">BeBetter</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/bebetter-text.svg" width="62" height="18" alt="" />
+      </a>
+      </span><span>© 2026</span></div>
+    </footer>
   </section>;
 }

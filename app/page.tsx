@@ -206,7 +206,7 @@ function Workspace() {
           {actionError && <p role="alert" className="mt-2 text-sm text-rose-300">{translateMessage(actionError)}</p>}
         </div>
 
-        {screen === "home" && <HomeScreen collection={workspace.collection} reminderVisible={backupReminder.visible} onDownload={downloadBackup} onRemindLater={backupReminder.remindLater} onSelect={selectDocument} onOpenResult={openSearchResult} onImport={() => setImporting(true)} onReorder={(id, target) => { const issue = workspace.reorderWhole(id, target, t("Порядок цілих змінено.")); if (issue) setActionError(issue); }} />}
+        {screen === "home" && <HomeScreen collection={workspace.collection} reminderVisible={backupReminder.visible} onDownload={downloadBackup} onRemindLater={backupReminder.remindLater} onSelect={selectDocument} onActions={(id) => { const issue = workspace.select(id); if (issue) setActionError(issue); else setActionsId(id); }} onOpenResult={openSearchResult} onImport={() => setImporting(true)} onReorder={(id, target) => { const issue = workspace.reorderWhole(id, target, t("Порядок цілих змінено.")); if (issue) setActionError(issue); }} />}
 
         {screen === "settings" && <SettingsPanel count={workspace.collection.documents.length} storageError={workspace.storageError} canExport={workspace.collection.documents.length > 0 || Boolean(workspace.storageError)} onExport={downloadBackup} onImport={() => setImporting(true)} />}
 

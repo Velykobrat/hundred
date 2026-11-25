@@ -4,6 +4,27 @@ Meaningful changes to Hundred are recorded here. Earlier release history has not
 
 ## [Unreleased]
 
+### Added
+
+- GitHub Actions validation, Chromium end-to-end testing, and release consistency checks.
+- Stale-write detection and safer reloads for edits in multiple tabs.
+- Part locking, structural Part and saved Whole reordering, and mobile long-press reorder mode.
+- Mobile Add Part floating action and sticky mobile header.
+- BeBetter product signature and updated Hundred favicon and PWA icons.
+
+### Changed
+
+- Extracted Workspace screen composition and improved mobile navigation and header consistency.
+- Made structural Cards and List mutually exclusive and added compact two-column mobile cards.
+- Standardized card interaction: tap to open, long press to reorder, and Part actions via ⋯.
+- Simplified Settings and aligned documentation with current behavior.
+
+### Fixed
+
+- Added secure ID generation fallback for non-secure local network contexts.
+- Prevented outside taps on open panels from activating underlying controls.
+- Prevented automatic text-field focus on touch devices when opening create or edit forms.
+
 ## [0.9.0] - 2026-11-22
 
 This section describes the first formal Hundred release.

@@ -18,7 +18,7 @@ const manifest = await readFile(join(root, 'app/manifest.webmanifest'), 'utf8');
 const template = await readFile(join(root, 'src/pwa/worker.js'), 'utf8');
 const staticFiles = (await filesIn(staticDir)).filter(file => /\.(?:js|css|woff2?|ttf|otf)$/.test(file)).sort();
 const assets = staticFiles.map(file => '/_next/static/' + relative(staticDir, file).replaceAll('\\', '/'));
-assets.push('/pwa-192.png', '/pwa-512.png');
+assets.push('/pwa-192.png', '/pwa-512.png', '/brand/bebetter-text.svg');
 for (const match of shell.matchAll(/(?:src|href)="(\/_next\/static\/[^"?]+)(?:\?[^"]*)?"/g)) {
   if (!assets.includes(match[1])) throw new Error(`Shell asset missing from precache: ${match[1]}`);
 }

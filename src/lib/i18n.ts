@@ -2,6 +2,7 @@ export type Language = "uk" | "en";
 export type Theme = "dark" | "light" | "system";
 export type TranslationParams = Record<string, string | number>;
 export const english: Record<string, string> = {
+  "Відкрити сайт BeBetter": "Open the BeBetter website",
   "Порядок цілих змінено.": "Whole order updated.",
   "Зафіксувати частину": "Lock Part",
   "Зняти фіксацію": "Unlock Part",
@@ -108,6 +109,8 @@ export const english: Record<string, string> = {
   "Переміщуйся між рівнями": "Move between levels",
   "Кнопка «На рівень вище» повертає до батьківської частини. У «Рівнях» можна перейти до цілого, іншого предка або сусідньої частини.": "Go up one level returns to the parent part. Levels lets you jump to the whole, another ancestor or a sibling part.",
   "Керуй змінами": "Manage changes",
+  "Змінюй порядок": "Change order",
+  "Натисни картку, щоб відкрити її; утримуй, щоб змінити порядок. Меню «⋯» відкриває дії цілого або частини.": "Tap a card to open it; long-press to reorder. Use ⋯ for Whole or Part actions.",
   "Меню «⋯» відкриває редагування та видалення. Стрілки у верхній панелі вкладки «Ціле» скасовують і повторюють зміни.": "The ⋯ menu provides edit and delete actions. The arrows at the top of Whole undo and redo changes.",
   "Збережи резервну копію": "Save a backup",
   "У Налаштуваннях завантаж копію для перенесення на інший пристрій. Імпорт додає цілі до наявних.": "Download a backup in Settings to transfer your data to another device. Import adds wholes to your existing ones.",

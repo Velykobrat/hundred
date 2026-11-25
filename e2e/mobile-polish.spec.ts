@@ -1,6 +1,35 @@
 import { expect, test } from "@playwright/test";
 import { addPart, createWhole } from "./helpers";
 
+test("Settings signature links only the wordmark and remains usable in both themes", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Налаштування" }).click();
+  const footer = page.locator(".settings-signature");
+  const link = footer.getByRole("link", { name: "Відкрити сайт BeBetter" });
+  await expect(footer.getByRole("link")).toHaveCount(1);
+  await expect(link).toHaveAttribute("href", "https://bebetter-development.vercel.app/");
+  await expect(link).toHaveAttribute("target", "_blank");
+  await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  for (const theme of ["dark", "light"]) {
+    await page.locator("#hundred-theme").selectOption(theme);
+    await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+    const boxes = await footer.locator("strong, .maker, div > span:last-child").evaluateAll(elements => elements.map(element => element.getBoundingClientRect().y));
+    expect(Math.max(...boxes) - Math.min(...boxes)).toBeLessThan(8);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expect(link).toBeVisible();
+  }
+  await page.locator("#hundred-theme").focus();
+  for (let i = 0; i < 30 && !(await link.evaluate(element => document.activeElement === element)); i++) await page.keyboard.press("Tab");
+  await expect(link).toBeFocused();
+  await expect(link).toHaveCSS("outline-style", "solid");
+  await page.context().route("https://bebetter-development.vercel.app/**", route => route.fulfill({ status: 200, body: "BeBetter" }));
+  const [popup] = await Promise.all([page.waitForEvent("popup"), page.keyboard.press("Enter")]);
+  await popup.waitForURL("https://bebetter-development.vercel.app/");
+  await popup.close();
+  await page.locator("#hundred-language").selectOption("en");
+  await expect(footer.getByRole("link", { name: "Open the BeBetter website" })).toBeVisible();
+});
+
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
 test("name counter updates for creation and editing without changing the limit", async ({ page }) => {

@@ -4,17 +4,18 @@ Hundred centers on **Whole → Parts → New Whole**. Improvements should help p
 
 ## Now
 
-- Monitor 0.9.0 in real usage and collect bugs and usability feedback.
-- Verify remaining browser and real-device edge cases, including offline use and accessibility.
-- Harden multi-tab editing behavior.
-- Improve mobile interaction with structural cards.
+- Complete Hundred and BeBetter branding integration.
+- Complete cross-browser and real-device QA before 1.0, including offline use.
+- Synchronize documentation and screenshots with the current app.
+- Audit code quality, dead code, dependencies, and configuration.
+- Prepare the 1.0.0 release candidate.
 
 ## Next
 
 - Refine search and make adding or editing several structural Parts faster.
 - Improve backup clarity and recovery guidance.
 - Evaluate whether the existing map and structural list would benefit from an additional tree view.
-- Broaden browser and assistive-technology coverage.
+- Broaden accessibility and assistive-technology coverage.
 
 ## Later
 

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1536 1536" role="img" aria-labelledby="title desc">
+  <title id="title">Hundred logo</title>
+  <desc id="desc">Treemap-inspired Hundred brand mark with one violet module and four dark modules.</desc>
+
+  <defs>
+    <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6A2DFF"/>
+      <stop offset="55%" stop-color="#5A20F5"/>
+      <stop offset="100%" stop-color="#4B16E8"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1C2028"/>
+      <stop offset="100%" stop-color="#191D24"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Top-left primary Part -->
+  <rect x="311" y="328" width="363" height="400" rx="43" fill="url(#violet)"/>
+
+  <!-- Top-right Part -->
+  <rect x="695" y="328" width="243" height="157" rx="35" fill="url(#dark)"/>
+
+  <!-- Middle-right Part -->
+  <rect x="695" y="510" width="243" height="220" rx="29" fill="url(#dark)"/>
+
+  <!-- Bottom-left Part -->
+  <rect x="311" y="753" width="408" height="170" rx="42" fill="url(#dark)"/>
+
+  <!-- Bottom-right Part -->
+  <rect x="741" y="753" width="197" height="170" rx="34" fill="url(#dark)"/>
+</svg>

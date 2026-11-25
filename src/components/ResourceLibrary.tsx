@@ -24,7 +24,7 @@ function levelLabel(count: number, language: "uk" | "en") {
 const LONG_PRESS_MS = 500;
 const MOVE_TOLERANCE = 10;
 
-function WholeCard({ document, active, dragging, target, onOpen, onStart, onMove, onEnd }: { document: Document; active: boolean; dragging: boolean; target: boolean; onOpen: (id: string) => void; onStart: (id: string) => void; onMove: (x: number, y: number) => void; onEnd: (cancelled: boolean) => void }) {
+function WholeCard({ document, active, dragging, target, onOpen, onActions, onStart, onMove, onEnd }: { document: Document; active: boolean; dragging: boolean; target: boolean; onOpen: (id: string) => void; onActions: (id: string) => void; onStart: (id: string) => void; onMove: (x: number, y: number) => void; onEnd: (cancelled: boolean) => void }) {
   const { t, formatPercent, language } = usePreferences();
   const root = document.root!;
   const measured = isMeasuredNode(root);
@@ -82,7 +82,8 @@ function WholeCard({ document, active, dragging, target, onOpen, onStart, onMove
     pointer.current = null;
     if (current.dragging) onEnd(cancelled);
   }
-  return <button ref={button} type="button" data-whole-id={root.id} className={`resource-card surface${measured ? " is-measured" : " is-structural"}${dragging ? " is-dragging" : ""}${target ? " is-drop-target" : ""}`} aria-label={t("Відкрити ціле «{p0}»", {p0: root.name})}
+  return <div data-whole-id={root.id} className={`resource-card surface${measured ? " is-measured" : " is-structural"}${dragging ? " is-dragging" : ""}${target ? " is-drop-target" : ""}`}>
+    <button ref={button} type="button" className="resource-card-open" aria-label={t("Відкрити ціле «{p0}»", {p0: root.name})}
     onPointerDown={start} onPointerMove={move} onPointerUp={event => end(event)} onPointerCancel={event => end(event, true)} onContextMenu={event => event.preventDefault()}
     onClick={event => { if (suppressClick.current && event.detail !== 0) { suppressClick.current = false; return; } if (!active) onOpen(root.id); }}>
     <span className="resource-card-top"><span className="resource-card-icon" style={{ color: getNodeColor(root) }}><Icon name={getNodeIcon(root)} width="25" height="25" /></span><Icon name="chevron" /></span>
@@ -91,10 +92,12 @@ function WholeCard({ document, active, dragging, target, onOpen, onStart, onMove
     {measured && <span className="usage-track" aria-hidden="true"><span style={{ width: `${usedPercent}%`, backgroundColor: getNodeColor(root) }} /></span>}
     <span className="resource-card-compact-meta">{measured ? <>{formatPercent(usedPercent)} {t("розподілено")}</> : <>{root.children.length} {t("частин ·")} {levels} {levelLabel(levels, language)}</>}</span>
     {(measured || document.pathIds.length > 1) && <span className="resource-card-footer">{measured && <span className="resource-card-stats"><span>{root.children.length} {t("частин ·")} {formatPercent(usedPercent)} {t("розподілено")}</span><span>{levels} {levelLabel(levels, language)}</span></span>}{document.pathIds.length > 1 && <span className="resource-card-continue">{t("Продовжити")}</span>}</span>}
-  </button>;
+    </button>
+    <button type="button" className="icon-button resource-card-actions" aria-label={t("Дії для «{p0}»", {p0: root.name})} onClick={() => onActions(root.id)}><Icon name="more" /></button>
+  </div>;
 }
 
-function WholeGrid({ collection, onOpen, onReorder }: { collection: Collection; onOpen: (id: string) => void; onReorder: (id: string, target: number) => void }) {
+function WholeGrid({ collection, onOpen, onActions, onReorder }: { collection: Collection; onOpen: (id: string) => void; onActions: (id: string) => void; onReorder: (id: string, target: number) => void }) {
   const { t } = usePreferences();
   const [active, setActive] = useState(false);
   const [dragged, setDragged] = useState<string | null>(null);
@@ -127,11 +130,11 @@ function WholeGrid({ collection, onOpen, onReorder }: { collection: Collection; 
   }
   return <div ref={grid} className={`resource-library-grid${active ? " is-reordering" : ""}`}>
     {active && <span className="sr-only" role="status">{t("Режим перестановки")}</span>}
-    {collection.documents.map(document => document.root && <WholeCard key={document.root.id} document={document} active={active} dragging={dragged === document.root.id} target={targetId === document.root.id && targetId !== dragged} onOpen={onOpen} onStart={start} onMove={move} onEnd={end} />)}
+    {collection.documents.map(document => document.root && <WholeCard key={document.root.id} document={document} active={active} dragging={dragged === document.root.id} target={targetId === document.root.id && targetId !== dragged} onOpen={onOpen} onActions={id => { setActive(false); setDragged(null); setTargetId(null); onActions(id); }} onStart={start} onMove={move} onEnd={end} />)}
   </div>;
 }
 
-export default function ResourceLibrary({ collection, onOpen, onOpenResult, onCreate, onImport, onReorder }: { collection: Collection; onOpen: (id: string) => void; onOpenResult: (rootId: string, pathIds: string[]) => void; onCreate: () => void; onImport: () => void; onReorder: (id: string, target: number) => void }) {
+export default function ResourceLibrary({ collection, onOpen, onActions, onOpenResult, onCreate, onImport, onReorder }: { collection: Collection; onOpen: (id: string) => void; onActions: (id: string) => void; onOpenResult: (rootId: string, pathIds: string[]) => void; onCreate: () => void; onImport: () => void; onReorder: (id: string, target: number) => void }) {
   const { t } = usePreferences();
   const full = collection.documents.length >= MAX_DOCUMENTS;
   const [query, setQuery] = useState("");
@@ -140,7 +143,7 @@ export default function ResourceLibrary({ collection, onOpen, onOpenResult, onCr
     <LibraryIntro />
     {collection.documents.length > 0 && <WholeSearch collection={collection} query={query} onQueryChange={setQuery} onOpen={onOpenResult} onCreate={onCreate} full={full} onSearchFocus={() => setGridSession(session => session + 1)} />}
     {collection.documents.length ? <>
-      {!query.trim() && <WholeGrid key={gridSession} collection={collection} onOpen={onOpen} onReorder={onReorder} />}
+      {!query.trim() && <WholeGrid key={gridSession} collection={collection} onOpen={onOpen} onActions={onActions} onReorder={onReorder} />}
       {full && <p className="parts-note">{t("Збережено всі")}{" "}{MAX_DOCUMENTS} {" "}{t("цілих. Щоб додати нове, видали одне з наявних.")}</p>}
     </> : <div className="library-empty surface">
       <h2>{t("Тут поки немає цілих.")}</h2>

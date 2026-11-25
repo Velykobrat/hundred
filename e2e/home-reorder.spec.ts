@@ -107,3 +107,41 @@ test("scroll and search do not reorder Wholes", async ({ page }) => {
   await page.getByRole("searchbox").fill("");
   await expect(cards.first().locator(".resource-card-name")).toHaveText("Company");
 });
+
+test("Whole actions open from Home without opening or reordering the card", async ({ page }) => {
+  await page.goto("/");
+  const card = page.locator(".resource-card").filter({ has: page.getByRole("button", { name: "Відкрити ціле «Company»" }) });
+  const actions = card.getByRole("button", { name: "Дії для «Company»" });
+  await expect(actions).toBeVisible();
+  const bounds = (await actions.boundingBox())!;
+  expect(bounds.width).toBeGreaterThanOrEqual(44);
+  expect(bounds.height).toBeGreaterThanOrEqual(44);
+  await actions.focus();
+  await page.keyboard.press("Enter");
+  const menu = page.getByRole("dialog", { name: "Company" });
+  await expect(menu).toBeVisible();
+  await expect(page.locator(".resource-library")).toBeVisible();
+  await expect(page.locator(".resource-library-grid")).not.toHaveClass(/is-reordering/);
+  await page.keyboard.press("Escape");
+  await expect(actions).toBeFocused();
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }] });
+    await page.waitForTimeout(600);
+    await expect(page.locator(".resource-library-grid")).not.toHaveClass(/is-reordering/);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  } finally { await cdp.detach(); }
+  await expect(menu).toBeVisible();
+  await menu.getByRole("button", { name: "Редагувати ціле" }).tap();
+  const edit = page.getByRole("dialog", { name: "Редагувати ціле" });
+  await edit.getByLabel("Назва частини").fill("Company updated");
+  await edit.getByRole("button", { name: "Зберегти зміни" }).tap();
+  await expect(page.getByRole("button", { name: "Відкрити ціле «Company updated»" })).toBeVisible();
+  await page.getByRole("button", { name: "Дії для «Company updated»" }).tap();
+  await expect(page.getByRole("dialog", { name: "Company updated" })).toBeVisible();
+  await page.touchscreen.tap(5, 5);
+  await expect(page.getByRole("dialog", { name: "Company updated" })).not.toBeVisible();
+  await expect(page.locator(".resource-library")).toBeVisible();
+  await page.getByRole("button", { name: "Відкрити ціле «Company updated»" }).tap();
+  await expect(page.getByRole("heading", { name: "Company updated", level: 1 })).toBeVisible();
+});

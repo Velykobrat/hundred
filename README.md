@@ -18,6 +18,8 @@ Hundred is a system for describing a Whole through Parts, where every Part can b
 
 Create a Whole, add Parts, and open any Part to explore or add its own Parts. For example, a team can contain departments; each department can become a Whole containing its members. Navigate back to a parent or use **Levels** to move through the hierarchy.
 
+Tap or click a saved Whole or structural Part card to open it. Long-press a card to enter reorder mode. Use **⋯** on either card for actions.
+
 ## Two kinds of Whole
 
 ### Structural Whole
@@ -35,7 +37,9 @@ A Structural Whole can contain another Structural Whole or a Measured Whole. For
 - Nested Wholes and Parts, with navigation to ancestors and neighboring Parts.
 - Structural cards or lists and a proportional treemap for measured Parts.
 - Local search across saved Wholes and nested Parts, with paths to results.
-- Sibling reordering, editing, duplication of a Whole, and undo/redo.
+- Reorder saved Wholes and sibling Parts; lock a Part to prevent opening it until unlocked.
+- Edit and duplicate Wholes, and undo or redo changes.
+- Mobile swipe navigation, a floating Add Part action, and a sticky header.
 - Optional colors and icons; keyboard-accessible forms and navigation.
 - Local-first autosave, JSON backup/import, and offline PWA support.
 - Ukrainian and English interface; light, dark, and system themes.
@@ -67,6 +71,8 @@ Lists and quantities often sit at different levels of the same idea. Hundred let
 ## Local-first and offline
 
 No account or backend is required. Wholes, navigation, and preferences are stored in the current browser on the current origin; there is no automatic cloud synchronization. Export a JSON backup before clearing browser data or moving to another device. Import adds independent copies rather than replacing existing Wholes.
+
+Open tabs detect stale writes and reload newer local data to reduce accidental overwrites. This is not collaborative editing or a guarantee against every conflict.
 
 When at least one Whole exists, Home may show a non-blocking backup reminder. **Remind me later** postpones it for seven days; starting a backup download suppresses it for 30 days. Reminder timestamps are stored separately from the Wholes in the same browser and shared with other open tabs. A started download does not guarantee that the file was saved successfully.
 
