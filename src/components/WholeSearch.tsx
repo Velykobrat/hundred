@@ -8,10 +8,10 @@ import Icon from "./Icon";
 import NodeMetadata from "./NodeMetadata";
 import "./WholeSearch.css";
 
-export default function WholeSearch({ collection, query, onQueryChange, onOpen, onCreate, full }: {
+export default function WholeSearch({ collection, query, onQueryChange, onOpen, onCreate, full, onSearchFocus }: {
   collection: Collection; query: string; onQueryChange: (query: string) => void;
   onOpen: (rootId: string, pathIds: string[]) => void;
-  onCreate: () => void; full: boolean;
+  onCreate: () => void; full: boolean; onSearchFocus: () => void;
 }) {
   const { t } = usePreferences();
   const id = useId();
@@ -25,7 +25,7 @@ export default function WholeSearch({ collection, query, onQueryChange, onOpen, 
     <div className="whole-search-controls">
     <div className="whole-search-field">
       <Icon name="search" />
-      <input ref={input} id={id} type="search" value={query} onChange={event => onQueryChange(event.target.value)} onKeyDown={event => { if (event.key === "Escape") clear(); }} placeholder={t("Знайти ціле або частину…")} autoComplete="off" aria-controls={id + "-results"} />
+      <input ref={input} id={id} type="search" value={query} onFocus={onSearchFocus} onChange={event => onQueryChange(event.target.value)} onKeyDown={event => { if (event.key === "Escape") clear(); }} placeholder={t("Знайти ціле або частину…")} autoComplete="off" aria-controls={id + "-results"} />
       {query && <button type="button" onClick={clear} aria-label={t("Очистити пошук")}>×</button>}
     </div>
     <button type="button" className="primary-button whole-search-create" onClick={onCreate} disabled={full}><Icon name="plus" /><span>{t("Нове ціле")}</span></button>

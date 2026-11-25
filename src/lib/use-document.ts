@@ -101,6 +101,6 @@ export function useDocument() {
     } catch (error) { return error instanceof Error ? error.message : "Не вдалося імпортувати копію."; }
   };
 
-  return { ...state, change: (document: Document, notice: string) => send({ type: "change", document, notice }), navigate: (pathIds: string[]) => send({ type: "navigate", pathIds }), select: (id: string | null) => send({ type: "select", id }), open: (id: string, pathIds: string[]) => send({ type: "open", id, pathIds }), remove: (id: string) => send({ type: "remove", id }), duplicate, importCollection, undo: () => send({ type: "undo" }), redo: () => send({ type: "redo" }) };
+  return { ...state, change: (document: Document, notice: string) => send({ type: "change", document, notice }), reorderWhole: (id: string, target: number, notice: string) => send({ type: "reorder-whole", id, target, notice }), navigate: (pathIds: string[]) => send({ type: "navigate", pathIds }), select: (id: string | null) => send({ type: "select", id }), open: (id: string, pathIds: string[]) => send({ type: "open", id, pathIds }), remove: (id: string) => send({ type: "remove", id }), duplicate, importCollection, undo: () => send({ type: "undo" }), redo: () => send({ type: "redo" }) };
 }
 

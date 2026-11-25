@@ -1,11 +1,12 @@
 import { emptyDocument, type Document } from "./document";
-import { activeDocument, emptyCollection, putDocument, type Collection } from "./collection";
+import { activeDocument, emptyCollection, moveWhole, putDocument, type Collection } from "./collection";
 
 export type State = { collection: Collection; document: Document; past: Collection[]; future: Collection[]; ready: boolean; storageError: string | null; notice: string };
 export type Action =
   | { type: "load"; document?: Document; collection?: Collection; error?: string; notice?: string }
   | { type: "change"; document: Document; notice: string }
   | { type: "replace"; collection: Collection; notice: string }
+  | { type: "reorder-whole"; id: string; target: number; notice: string }
   | { type: "navigate"; pathIds: string[] }
   | { type: "select"; id: string | null }
   | { type: "open"; id: string; pathIds: string[] }
@@ -41,6 +42,10 @@ export function documentReducer(state: State, action: Action): State {
   }
   if (action.type === "change") return commit(state, putDocument(state.collection, action.document), action.notice);
   if (action.type === "replace") return commit(state, action.collection, action.notice);
+  if (action.type === "reorder-whole") {
+    const collection = moveWhole(state.collection, action.id, action.target);
+    return collection === state.collection ? state : commit(state, collection, action.notice);
+  }
   if (action.type === "undo" && state.past.length) return withCollection({ ...state, past: state.past.slice(0, -1), future: [state.collection, ...state.future], notice: "Останню дію скасовано." }, state.past[state.past.length - 1]);
   if (action.type === "redo" && state.future.length) return withCollection({ ...state, past: [...state.past.slice(-29), state.collection], future: state.future.slice(1), notice: "Дію повторено." }, state.future[0]);
   return state;

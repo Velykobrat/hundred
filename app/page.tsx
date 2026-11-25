@@ -190,11 +190,13 @@ function Workspace() {
         <PwaRegistration />
         <header className={`app-header${screen === "home" ? " home-header" : ""}`}>
           <button type="button" onClick={() => screen === "home" ? window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }) : goToScreen("home")} className="brand" aria-label={t(screen === "home" ? "Hundred — нагору" : "Hundred — на головну")}>Hundred<span className="brand-dot" aria-hidden="true" /></button>
+          <div className="app-header-actions">
           {screen === "home" && <button type="button" className="home-header-create" aria-label={t("Нове ціле")} disabled={workspace.collection.documents.length >= MAX_DOCUMENTS} onClick={() => selectDocument(null)}><Icon name="plus" /><span>{t("Нове ціле")}</span></button>}
           {screen === "resource" ? <div className="history-controls">
             <button type="button" onClick={() => { clearDialogs(); workspace.undo(); }} disabled={!workspace.past.length} className="icon-button" title={t("Скасувати останню зміну")} aria-label={t("Скасувати останню зміну")}>↶</button>
             <button type="button" onClick={() => { clearDialogs(); workspace.redo(); }} disabled={!workspace.future.length} className="icon-button" title={t("Повторити скасовану зміну")} aria-label={t("Повторити скасовану зміну")}>↷</button>
           </div> : null}
+          </div>
         </header>
 
         <div className={`save-status${workspace.storageError || workspace.notice || actionError ? "" : " save-status-empty"}`}>
@@ -204,7 +206,7 @@ function Workspace() {
           {actionError && <p role="alert" className="mt-2 text-sm text-rose-300">{translateMessage(actionError)}</p>}
         </div>
 
-        {screen === "home" && <HomeScreen collection={workspace.collection} reminderVisible={backupReminder.visible} onDownload={downloadBackup} onRemindLater={backupReminder.remindLater} onSelect={selectDocument} onOpenResult={openSearchResult} onImport={() => setImporting(true)} />}
+        {screen === "home" && <HomeScreen collection={workspace.collection} reminderVisible={backupReminder.visible} onDownload={downloadBackup} onRemindLater={backupReminder.remindLater} onSelect={selectDocument} onOpenResult={openSearchResult} onImport={() => setImporting(true)} onReorder={(id, target) => { const issue = workspace.reorderWhole(id, target, t("Порядок цілих змінено.")); if (issue) setActionError(issue); }} />}
 
         {screen === "settings" && <SettingsPanel count={workspace.collection.documents.length} storageError={workspace.storageError} canExport={workspace.collection.documents.length > 0 || Boolean(workspace.storageError)} onExport={downloadBackup} onImport={() => setImporting(true)} />}
 

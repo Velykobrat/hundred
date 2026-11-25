@@ -2,6 +2,7 @@ export type Language = "uk" | "en";
 export type Theme = "dark" | "light" | "system";
 export type TranslationParams = Record<string, string | number>;
 export const english: Record<string, string> = {
+  "Порядок цілих змінено.": "Whole order updated.",
   "Зафіксувати частину": "Lock Part",
   "Зняти фіксацію": "Unlock Part",
   "Частину зафіксовано.": "Part locked.",

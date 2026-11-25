@@ -6,8 +6,9 @@ import IconSelector from "./IconSelector";
 import type { NodeIcon } from "../lib/node-icon";
 import type { NodeColor } from "../lib/node-color";
 import { usePreferences } from "../lib/use-preferences";
+import { isTouchDevice } from "../lib/touch-device";
 
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { parseValue, units, validateFields, type FieldErrors } from "../lib/document";
 import { parsePercent, percentToValue, valueToPercent } from "../lib/percentage";
 
@@ -23,6 +24,10 @@ type Props = {
 export default function NodeForm({ initialName = "", initialValue, initialColor, initialIcon, unit = "", createWhole = false, optionalQuantity = false, structuralEdit = false, available, minimum = 0, submitLabel, onSubmit, onCancel, parentValue, parentName }: Props) {
   const { t, formatNumber, formatPercent, translateMessage, language } = usePreferences();
   const id = useId();
+  const nameInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (createWhole && !isTouchDevice()) nameInput.current?.focus();
+  }, [createWhole]);
   const optional = createWhole || optionalQuantity;
   const [name, setName] = useState(initialName);
   const [color, setColor] = useState<NodeColor | undefined>(initialColor);
@@ -71,7 +76,7 @@ export default function NodeForm({ initialName = "", initialValue, initialColor,
     <form noValidate onSubmit={submit} className="space-y-4">
       <div>
         <label htmlFor={`${id}-name`} className="mb-2 block text-sm text-neutral-300">{createWhole ? t("Назва") : t("Назва частини")}</label>
-        <input id={`${id}-name`} autoFocus={Boolean(onCancel)} data-dialog-initial-focus={onCancel ? "" : undefined} value={name} onChange={(event) => { setName(event.target.value); setErrors((previous) => ({ ...previous, name: undefined })); }} maxLength={120} autoComplete="off" placeholder={createWhole ? t("Наприклад: Мої проєкти") : t("Назва категорії")} className={fieldClass} aria-required="true" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? `${id}-name-error` : undefined} />
+        <input ref={nameInput} id={`${id}-name`} data-dialog-initial-focus={onCancel ? "" : undefined} value={name} onChange={(event) => { setName(event.target.value); setErrors((previous) => ({ ...previous, name: undefined })); }} maxLength={120} autoComplete="off" placeholder={createWhole ? t("Наприклад: Мої проєкти") : t("Назва категорії")} className={fieldClass} aria-required="true" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? `${id}-name-error` : undefined} />
         <p aria-hidden="true" className="mt-1 text-right text-xs text-neutral-400">{name.length} / 120</p>
         {errors.name && <p id={`${id}-name-error`} role="alert" className="mt-2 text-sm text-rose-300">{translateMessage(errors.name)}</p>}
       </div>

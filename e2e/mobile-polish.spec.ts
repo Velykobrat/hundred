@@ -116,7 +116,7 @@ test("Settings puts the guide first and omits redundant copy in both languages",
 
 test("mobile floating add follows the regular action and avoids navigation", async ({ page }) => {
   await createWhole(page, "Company");
-  for (let i = 1; i <= 7; i++) await addPart(page, `Part ${i}`);
+  for (let i = 1; i <= 11; i++) await addPart(page, `Part ${i}`);
   const regular = page.locator(".add-part-button");
   const floating = page.locator(".add-part-floating");
   await regular.scrollIntoViewIfNeeded();

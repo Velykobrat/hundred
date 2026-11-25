@@ -1,6 +1,7 @@
 "use client";
 
 import { usePreferences } from "../lib/use-preferences";
+import { isTouchDevice } from "../lib/touch-device";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 
 export default function Modal({ title, children, onClose, variant = "dialog", nonModal = false }: { title: string; children: ReactNode; onClose: () => void; variant?: "dialog" | "sheet"; nonModal?: boolean }) {
@@ -12,7 +13,11 @@ export default function Modal({ title, children, onClose, variant = "dialog", no
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (element && !element.open) {
       element.showModal();
-      (element.querySelector<HTMLElement>("[data-dialog-initial-focus]") ?? (nonModal ? element.querySelector<HTMLElement>("button") : null))?.focus();
+      const initial = element.querySelector<HTMLElement>("[data-dialog-initial-focus]");
+      const focusTarget = initial instanceof HTMLInputElement && isTouchDevice()
+        ? element.querySelector<HTMLElement>("button")
+        : initial ?? (nonModal ? element.querySelector<HTMLElement>("button") : null);
+      focusTarget?.focus();
     }
     return () => {
       element?.close();

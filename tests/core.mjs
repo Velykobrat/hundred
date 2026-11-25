@@ -12,6 +12,7 @@ const { createNode, addPart, parseValue, remaining, sumValues, editPart, deleteP
 const { documentReducer, initialState } = await import(new URL('history.mjs', temp));
 const { createTreemap } = await import(new URL('treemap.mjs', temp));
 const { decodeCollection, encodeCollection, emptyCollection, cloneDocument, putDocument, appendImported } = await import(new URL('collection.mjs', temp));
+const { moveWhole } = await import(new URL('collection.mjs', temp));
 const { decodeStoredCollection, writeCollection, InvalidStoredCollection } = await import(new URL('collection-storage.mjs', temp));
 const { parsePercent, percentToValue, valueToPercent } = await import(new URL('percentage.mjs', temp));
 const { createId } = await import(new URL('id.mjs', temp));
@@ -20,6 +21,27 @@ const node = (id, value, children = []) => ({ mode: 'measured', id, name: id, va
 const root = node('root', 100, [node('a', 60, [node('nested', 25)]), node('b', 30)]);
 let tested = 0;
 function check(name, callback) { callback(); tested++; console.log(`PASS ${name}`); }
+check('Whole reorder preserves content, active selection, backups, imports and history', () => {
+  const documents = ['A', 'B', 'C'].map(id => ({ root: createNode(id, id), pathIds: [id] }));
+  const original = { documents, activeId: 'B' };
+  const reordered = moveWhole(original, 'C', 0);
+  assert.deepEqual(reordered.documents.map(item => item.root.id), ['C', 'A', 'B']);
+  assert.equal(reordered.activeId, 'B');
+  assert.deepEqual(reordered.documents, [documents[2], documents[0], documents[1]]);
+  assert.deepEqual(decodeCollection(encodeCollection(reordered)), reordered);
+  assert.equal(moveWhole(original, 'missing', 0), original);
+  assert.equal(moveWhole(original, 'A', 9), original);
+  let id = 0;
+  const imported = appendImported(emptyCollection, reordered, () => `import-${++id}`);
+  assert.deepEqual(imported.documents.map(item => item.root.name), ['C', 'A', 'B']);
+  let state = documentReducer(initialState, { type: 'load', collection: original });
+  state = documentReducer(state, { type: 'reorder-whole', id: 'C', target: 0, notice: '' });
+  assert.deepEqual(state.collection, reordered);
+  state = documentReducer(state, { type: 'undo' });
+  assert.deepEqual(state.collection, original);
+  state = documentReducer(state, { type: 'redo' });
+  assert.deepEqual(state.collection, reordered);
+});
 check('Lock state remains compatible with legacy data, backups, imports and copies', () => {
   const legacy = decodeDocument(encodeDocument({ root, pathIds: ['root'] }));
   assert.equal(Boolean(legacy.root.children[0].locked), false);

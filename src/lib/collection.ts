@@ -6,6 +6,14 @@ export const emptyCollection: Collection = { documents: [], activeId: null };
 export const MAX_DOCUMENTS = 20;
 export const MAX_FILE_SIZE = 4_000_000;
 
+export function moveWhole(collection: Collection, id: string, target: number): Collection {
+  const index = collection.documents.findIndex(document => document.root?.id === id);
+  if (index < 0 || !Number.isInteger(target) || target < 0 || target >= collection.documents.length || target === index) return collection;
+  const documents = [...collection.documents];
+  documents.splice(target, 0, documents.splice(index, 1)[0]);
+  return { ...collection, documents };
+}
+
 export function activeDocument(collection: Collection): Document {
   return collection.documents.find((document) => document.root?.id === collection.activeId) ?? emptyDocument;
 }
