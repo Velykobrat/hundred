@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { addPart } from "./helpers";
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
@@ -14,6 +14,9 @@ test("mobile header geometry stays consistent across main screens", async ({ pag
   const homeActions = (await actions.boundingBox())!;
   expect(homeHeader.height).toBe(64);
   expect(homeBrand.x).toBe(16);
+  await expect(brand.locator(".brand-mark")).toHaveAttribute("aria-hidden", "true");
+  await expect(brand.locator(".brand-mark")).toHaveCSS("height", "16px");
+  expect(homeBrand.x + homeBrand.width).toBeLessThan(homeActions.x);
   await page.screenshot({ path: testInfo.outputPath("header-home.png") });
 
   async function verify(screen: string) {
@@ -54,4 +57,6 @@ test("mobile header geometry stays consistent across main screens", async ({ pag
   await page.getByRole("button", { name: "Налаштування", exact: true }).tap();
   await expect(page.getByRole("heading", { name: "Налаштування", level: 1 })).toBeVisible();
   await verify("settings");
+  await brand.tap();
+  await expect(page.locator(".resource-library")).toBeVisible();
 });

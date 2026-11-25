@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { addPart, createWhole } from "./helpers";
 
 test("Settings signature links only the wordmark and remains usable in both themes", async ({ page }) => {
@@ -13,8 +13,14 @@ test("Settings signature links only the wordmark and remains usable in both them
   for (const theme of ["dark", "light"]) {
     await page.locator("#hundred-theme").selectOption(theme);
     await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-    const boxes = await footer.locator("strong, .maker, div > span:last-child").evaluateAll(elements => elements.map(element => element.getBoundingClientRect().y));
-    expect(Math.max(...boxes) - Math.min(...boxes)).toBeLessThan(8);
+    const product = (await footer.locator("strong").boundingBox())!;
+    const copyright = (await footer.getByText("© 2026").boundingBox())!;
+    const maker = (await footer.locator(".maker").boundingBox())!;
+    const footerBox = (await footer.boundingBox())!;
+    expect(maker.x).toBeGreaterThan(copyright.x + copyright.width);
+    expect(product.x).toBeGreaterThan(maker.x + maker.width);
+    expect(Math.abs(maker.x + maker.width / 2 - footerBox.x - footerBox.width / 2)).toBeLessThan(1);
+    expect(Math.abs(copyright.y + copyright.height / 2 - maker.y - maker.height / 2)).toBeLessThan(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(link).toBeVisible();
   }
@@ -194,8 +200,17 @@ test("mobile Home header stays visible, scrolls to top and opens creation", asyn
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   await expect(header).toBeInViewport();
+  await page.evaluate(() => {
+    const scroll = window.scrollTo.bind(window);
+    window.scrollTo = ((options: ScrollToOptions) => { (window as unknown as { lastScroll: ScrollToOptions }).lastScroll = options; scroll(options); }) as typeof window.scrollTo;
+  });
+  await brand.click();
+  expect(await page.evaluate(() => (window as unknown as { lastScroll: ScrollToOptions }).lastScroll.behavior)).toBe("smooth");
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await page.evaluate(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" }));
   await page.emulateMedia({ reducedMotion: "reduce" });
   await brand.click();
+  expect(await page.evaluate(() => (window as unknown as { lastScroll: ScrollToOptions }).lastScroll.behavior)).toBe("instant");
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await brand.focus();

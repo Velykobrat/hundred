@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useReducer, useCallback, useRef } from "react";
 import { STORAGE_KEY, type Document } from "./document";
 import { appendImported, cloneDocument, emptyCollection, putDocument, type Collection } from "./collection";
-import { decodeStoredCollection, InvalidStoredCollection, writeCollection } from "./collection-storage";
+import { decodeStoredCollection, initializeCollection, InvalidStoredCollection, writeCollection } from "./collection-storage";
 import { documentReducer as reducer, initialState as initial, type Action, type State } from "./history";
 import { createId } from "./id";
 
@@ -26,8 +26,7 @@ export function useDocument() {
   }, [state.collection]);
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const stored = decodeStoredCollection(raw);
+      const { raw, stored } = initializeCollection(localStorage, createId);
       persistedRaw.current = raw;
       blockedStorage.current = false;
       apply({ type: "load", collection: stored.collection });

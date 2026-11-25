@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { createWhole } from "./helpers";
 
 test("the reminder waits for saved data and can be postponed for seven days", async ({ page }) => {

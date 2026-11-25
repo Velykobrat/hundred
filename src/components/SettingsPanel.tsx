@@ -44,11 +44,12 @@ export default function SettingsPanel({ count, storageError, canExport, onExport
       </div>
     </section>
     <footer className="settings-signature">
-      <div><strong>Hundred · v{version}</strong><span className="maker">by <a href="https://bebetter-development.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label={t("Відкрити сайт BeBetter")}><span className="sr-only">BeBetter</span>
+      <span className="settings-signature-copyright">© 2026</span>
+      <span className="maker">by <a href="https://bebetter-development.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label={t("Відкрити сайт BeBetter")}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/bebetter-text.svg" width="62" height="18" alt="" />
       </a>
-      </span><span>© 2026</span></div>
+      </span><strong>Hundred · v{version}</strong>
     </footer>
   </section>;
 }

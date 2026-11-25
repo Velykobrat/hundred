@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { addPart, createWhole } from "./helpers";
 import { version } from "../package.json";
 
@@ -25,7 +25,8 @@ test("home and settings render the product signature", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Налаштування" })).toBeVisible();
   const footer = page.locator(".settings-signature");
   await expect(footer).toContainText(`Hundred · v${version}`);
-  await expect(footer).toContainText("by BeBetter");
+  await expect(footer.locator(".maker")).toContainText("by");
+  await expect(footer.getByRole("link", { name: "Відкрити сайт BeBetter" })).toBeVisible();
   await expect(footer).toContainText("© 2026");
   await expect(footer.locator("img")).toHaveAttribute("alt", "");
   await expect(footer.locator("img")).toHaveAttribute("src", "/brand/bebetter-text.svg");

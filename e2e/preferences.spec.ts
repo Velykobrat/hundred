@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("language can be switched to English and persists across reload", async ({ page }) => {
   await page.goto("/");

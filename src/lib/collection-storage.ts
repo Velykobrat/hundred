@@ -1,9 +1,18 @@
 import { decodeCollection, emptyCollection, encodeCollection, type Collection } from "./collection";
 import { STORAGE_KEY } from "./document";
+import { createStarterCollection } from "./starter-collection";
 
 export type StoredCollection = { collection: Collection; revision: string | null };
 
 export class InvalidStoredCollection extends Error {}
+
+export function initializeCollection(storage: Pick<Storage, "getItem" | "setItem">, createRevision: () => string): { raw: string | null; stored: StoredCollection } {
+  const raw = storage.getItem(STORAGE_KEY);
+  if (raw !== null) return { raw, stored: decodeStoredCollection(raw) };
+  const collection = createStarterCollection();
+  const result = writeCollection(storage, null, collection, createRevision);
+  return result.kind === "conflict" ? { raw: result.raw, stored: result.stored } : { raw: result.raw, stored: { collection, revision: result.revision } };
+}
 
 export function decodeStoredCollection(raw: string | null): StoredCollection {
   if (raw === null) return { collection: emptyCollection, revision: null };

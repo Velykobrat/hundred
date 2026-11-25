@@ -72,6 +72,8 @@ Lists and quantities often sit at different levels of the same idea. Hundred let
 
 No account or backend is required. Wholes, navigation, and preferences are stored in the current browser on the current origin; there is no automatic cloud synchronization. Export a JSON backup before clearing browser data or moving to another device. Import adds independent copies rather than replacing existing Wholes.
 
+When no Hundred storage exists yet, the first launch creates two editable local examples: **Моє життя** (structural) and **Місячний бюджет** (measured). They are ordinary Wholes that you can edit or delete; they are not recreated when an existing collection is empty.
+
 Open tabs detect stale writes and reload newer local data to reduce accidental overwrites. This is not collaborative editing or a guarantee against every conflict.
 
 When at least one Whole exists, Home may show a non-blocking backup reminder. **Remind me later** postpones it for seven days; starting a backup download suppresses it for 30 days. Reminder timestamps are stored separately from the Wholes in the same browser and shared with other open tabs. A started download does not guarantee that the file was saved successfully.

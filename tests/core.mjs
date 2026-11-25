@@ -3,9 +3,9 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const temp = new URL('./.cache/', import.meta.url);
 mkdirSync(temp, { recursive: true });
-for (const name of ['id', 'search', 'i18n', 'backup-reminder', 'node-icon', 'node-color', 'node-mode', 'tree', 'document', 'history', 'treemap', 'collection', 'collection-storage', 'percentage']) {
+for (const name of ['id', 'search', 'i18n', 'backup-reminder', 'node-icon', 'node-color', 'node-mode', 'tree', 'document', 'history', 'treemap', 'collection', 'starter-collection', 'collection-storage', 'percentage']) {
   const source = readFileSync(new URL(`../src/lib/${name}.ts`, import.meta.url), 'utf8');
-  const js = stripTypeScriptTypes(source).replace(/from "\.\/(node-icon|node-color|node-mode|tree|document|collection|percentage)"/g, 'from "./$1.mjs"');
+  const js = stripTypeScriptTypes(source).replace(/from "\.\/(node-icon|node-color|node-mode|tree|document|collection|starter-collection|percentage)"/g, 'from "./$1.mjs"');
   writeFileSync(new URL(`${name}.mjs`, temp), js);
 }
 const { createNode, addPart, parseValue, remaining, sumValues, editPart, deletePart, decodeDocument, encodeDocument, normalizeDocument } = await import(new URL('document.mjs', temp));
@@ -13,7 +13,7 @@ const { documentReducer, initialState } = await import(new URL('history.mjs', te
 const { createTreemap } = await import(new URL('treemap.mjs', temp));
 const { decodeCollection, encodeCollection, emptyCollection, cloneDocument, putDocument, appendImported } = await import(new URL('collection.mjs', temp));
 const { moveWhole } = await import(new URL('collection.mjs', temp));
-const { decodeStoredCollection, writeCollection, InvalidStoredCollection } = await import(new URL('collection-storage.mjs', temp));
+const { decodeStoredCollection, writeCollection, initializeCollection, InvalidStoredCollection } = await import(new URL('collection-storage.mjs', temp));
 const { parsePercent, percentToValue, valueToPercent } = await import(new URL('percentage.mjs', temp));
 const { createId } = await import(new URL('id.mjs', temp));
 const { updateNodeById, movePartTo } = await import(new URL('tree.mjs', temp));
@@ -21,6 +21,56 @@ const node = (id, value, children = []) => ({ mode: 'measured', id, name: id, va
 const root = node('root', 100, [node('a', 60, [node('nested', 25)]), node('b', 30)]);
 let tested = 0;
 function check(name, callback) { callback(); tested++; console.log(`PASS ${name}`); }
+check('First launch creates a valid structural and measured starter collection', () => {
+  let raw = null;
+  const storage = { getItem: () => raw, setItem: (_key, value) => { raw = value; } };
+  const { stored } = initializeCollection(storage, () => 'seed-revision');
+  const collection = stored.collection;
+  assert.equal(stored.revision, 'seed-revision');
+  assert.deepEqual(collection.documents.map(d => d.root.name), ['Моє життя', 'Місячний бюджет']);
+  const [life, budget] = collection.documents.map(d => d.root);
+  assert.equal(life.mode, 'structural');
+  assert.equal(budget.mode, 'measured');
+  assert.equal(budget.value, 100000);
+  assert.equal(budget.unit, 'грн');
+  assert.equal(budget.children.reduce((sum, n) => sum + n.value, 0), 100000);
+  const ids = new Set();
+  function visit(n) {
+    assert(!ids.has(n.id)); ids.add(n.id);
+    if (n.mode === 'measured') assert.equal(n.unit, 'грн');
+    else assert.equal(n.weight, 1);
+    n.children.forEach(visit);
+  }
+  visit(life); visit(budget);
+  assert.deepEqual(decodeCollection(encodeCollection(collection)), collection);
+  assert.equal(JSON.parse(encodeCollection(collection)).revision, undefined);
+});
+check('Initialization preserves existing, empty, invalid and competing storage', () => {
+  let raw = encodeCollection(putDocument(emptyCollection, { root, pathIds: ['root'] }));
+  let writes = 0;
+  const storage = { getItem: () => raw, setItem: (_key, value) => { writes++; raw = value; } };
+  const existing = raw;
+  assert.equal(initializeCollection(storage, () => 'r').raw, existing);
+  raw = encodeCollection(emptyCollection);
+  assert.deepEqual(initializeCollection(storage, () => 'r').stored.collection, emptyCollection);
+  assert.equal(writes, 0);
+  raw = '{invalid';
+  assert.throws(() => initializeCollection(storage, () => 'r'), InvalidStoredCollection);
+  assert.equal(raw, '{invalid');
+  assert.equal(writes, 0);
+  raw = null;
+  const first = initializeCollection(storage, () => 'first');
+  const second = initializeCollection(storage, () => 'second');
+  assert.equal(first.raw, second.raw);
+  assert.equal(writes, 1);
+  const savedEmpty = writeCollection(storage, raw, emptyCollection, () => 'deleted');
+  assert.equal(savedEmpty.kind, 'saved');
+  assert.deepEqual(initializeCollection(storage, () => 'reseed').stored.collection, emptyCollection);
+  assert.equal(writes, 2);
+  let reads = 0;
+  const race = { getItem: () => ++reads === 1 ? null : first.raw, setItem: () => assert.fail('must not overwrite concurrent write') };
+  assert.deepEqual(initializeCollection(race, () => 'unused').stored.collection, first.stored.collection);
+});
 check('Whole reorder preserves content, active selection, backups, imports and history', () => {
   const documents = ['A', 'B', 'C'].map(id => ({ root: createNode(id, id), pathIds: [id] }));
   const original = { documents, activeId: 'B' };
@@ -310,13 +360,17 @@ function legacyTree(node) {
 }
 check('Actual v1 migrates every node to measured and preserves path, IDs and values', () => {
   const pathIds = ['root', 'a', 'nested'];
-  const migrated = decodeCollection(JSON.stringify({ version: 1, root: legacyTree(root), pathIds }));
+  const raw = JSON.stringify({ version: 1, root: legacyTree(root), pathIds });
+  const migrated = decodeCollection(raw);
+  assert.deepEqual(initializeCollection({ getItem: () => raw, setItem: () => assert.fail('legacy data must not be overwritten') }, () => 'unused').stored.collection, migrated);
   assert.deepEqual(migrated, { documents: [{ root, pathIds }], activeId: 'root' });
   assert.equal(JSON.parse(encodeCollection(migrated)).version, 3);
 });
 check('Actual v2 migrates multiple measured trees and preserves active selection', () => {
   const documents = [{ root: legacyTree(root), pathIds: ['root', 'a'] }, { root: legacyTree(node('second', 50)), pathIds: ['second'] }];
-  const migrated = decodeCollection(JSON.stringify({ version: 2, documents, activeId: 'second' }));
+  const raw = JSON.stringify({ version: 2, documents, activeId: 'second' });
+  const migrated = decodeCollection(raw);
+  assert.deepEqual(initializeCollection({ getItem: () => raw, setItem: () => assert.fail('legacy data must not be overwritten') }, () => 'unused').stored.collection, migrated);
   assert.deepEqual(migrated.documents[0].root, root);
   assert.deepEqual(migrated.documents[0].pathIds, ['root', 'a']);
   assert.equal(migrated.activeId, 'second');

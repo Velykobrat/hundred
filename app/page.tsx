@@ -189,7 +189,14 @@ function Workspace() {
       <div className="mx-auto max-w-7xl">
         <PwaRegistration />
         <header className={`app-header${screen === "home" ? " home-header" : ""}`}>
-          <button type="button" onClick={() => screen === "home" ? window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }) : goToScreen("home")} className="brand" aria-label={t(screen === "home" ? "Hundred — нагору" : "Hundred — на головну")}>Hundred<span className="brand-dot" aria-hidden="true" /></button>
+          <button type="button" onClick={() => screen === "home" ? window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }) : goToScreen("home")} className="brand" aria-label={t(screen === "home" ? "Hundred — нагору" : "Hundred — на головну")}>
+            <svg className="brand-mark" viewBox="300 318 650 616" aria-hidden="true" focusable="false">
+              <defs><linearGradient id="brand-violet" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#6A2DFF" /><stop offset="55%" stopColor="#5A20F5" /><stop offset="100%" stopColor="#4B16E8" /></linearGradient></defs>
+              <rect x="311" y="328" width="363" height="400" rx="43" fill="url(#brand-violet)" />
+              <g fill="currentColor"><rect x="695" y="328" width="243" height="157" rx="35" /><rect x="695" y="510" width="243" height="220" rx="29" /><rect x="311" y="753" width="408" height="170" rx="42" /><rect x="741" y="753" width="197" height="170" rx="34" /></g>
+            </svg>
+            <span className="brand-wordmark">Hundred<span className="brand-dot" aria-hidden="true" /></span>
+          </button>
           <div className="app-header-actions">
           {screen === "home" && <button type="button" className="home-header-create" aria-label={t("Нове ціле")} disabled={workspace.collection.documents.length >= MAX_DOCUMENTS} onClick={() => selectDocument(null)}><Icon name="plus" /><span>{t("Нове ціле")}</span></button>}
           {screen === "resource" ? <div className="history-controls">

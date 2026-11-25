@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { addPart, createWhole } from "./helpers";
 
 test("a stale tab cannot overwrite another tab and can edit after reloading", async ({ context, page }) => {

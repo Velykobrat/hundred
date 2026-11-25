@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { actionsFor, addPart, createWhole } from "./helpers";
 
 test("measured parts show correct units, allocation, and remaining capacity", async ({ page }) => {

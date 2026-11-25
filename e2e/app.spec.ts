@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { addPart, createWhole } from "./helpers";
 
 test("a new visitor sees onboarding and can start a whole", async ({ page }) => {

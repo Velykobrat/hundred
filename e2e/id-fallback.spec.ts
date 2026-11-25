@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { addPart, createWhole } from "./helpers";
 
 test("creation, duplication and import persist when randomUUID is unavailable", async ({ page }) => {
