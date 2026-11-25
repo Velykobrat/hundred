@@ -11,6 +11,7 @@ Meaningful changes to Hundred are recorded here. Earlier release history has not
 - Part locking, structural Part and saved Whole reordering, and mobile long-press reorder mode.
 - Mobile Add Part floating action and sticky mobile header.
 - BeBetter product signature and updated Hundred favicon and PWA icons.
+- Firefox and WebKit browser smoke coverage in CI and release checks.
 
 ### Changed
 

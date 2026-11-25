@@ -5,8 +5,8 @@ This checklist is preparation for a future release; completing it does not itsel
 ## Before release
 
 - [ ] Run `npm run check:release` to check package, lockfile, changelog, and release notes.
-- [ ] Run `npm test`, `npm run lint`, and `npm run build`, then `npm run test:e2e` against that fresh build.
-- [ ] Confirm GitHub Actions validation and Chromium E2E jobs pass for the release changes.
+- [ ] Run `npm test`, `npm run lint`, and `npm run build`, then `npm run test:e2e` and `npm run test:smoke` against that fresh build.
+- [ ] Confirm GitHub Actions validation, Chromium E2E, and Firefox/WebKit smoke jobs pass for the release changes.
 - [ ] Manually check desktop and mobile, including a real mobile device and light and dark themes.
 - [ ] Verify offline/PWA installation and updates using the [PWA guide](pwa.md#manual-qa-production-build).
 - [ ] Export a backup and import it in an isolated profile; confirm the contents without disturbing personal data.

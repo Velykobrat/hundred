@@ -122,12 +122,13 @@ npm test
 npm run lint
 npm run build
 npm run test:e2e
+npm run test:smoke
 npm run check:release
 ```
 
 Core tests cover structural and measured trees, precision and capacity, navigation, search, editing, history, import/export, and migrations. PWA tests cover worker behavior and build output; browser installation, storage eviction, and update lifecycle still require [manual PWA QA](docs/pwa.md#manual-qa-production-build).
 
-GitHub Actions runs release-metadata, core/PWA, lint, and build checks for pull requests and pushes to `main`, followed by a separate Chromium E2E job. A tag push matching `v*` runs the same checks and verifies the tag against the package and release metadata; it does not publish a release. Vercel runs core/PWA tests, lint, and the production build through `vercel.json`, then handles deployment; browser E2E runs in GitHub Actions instead.
+GitHub Actions runs release-metadata, core/PWA, lint, and build checks, followed by Chromium E2E and Firefox/WebKit smoke jobs. Tag pushes matching `v*` run the same checks and verify release metadata without publishing a release. Vercel runs core/PWA tests, lint, and the production build; browser tests run in GitHub Actions.
 
 ### Browser E2E tests
 
@@ -141,7 +142,9 @@ npm run test:e2e
 
 Playwright starts the production server on `127.0.0.1:3217`; this port must be free. Rebuild after changing app code so the suite tests the current version. Each test uses its own browser context, isolated from your browser and other tests. The Chromium suite covers onboarding, structural and measured Wholes, validation, editing, deletion, undo/redo, persistence, language, theme, a mobile viewport, and accessibility-oriented keyboard, form, and dialog checks.
 
-The suite blocks service workers. It checks the backup reminder after an already loaded page goes offline, but does not test offline app loading, browser installation, or the update lifecycle. Those require the mocked PWA tests and [manual PWA QA](docs/pwa.md#manual-qa-production-build).
+For the small Firefox and WebKit smoke suite, install browsers with `npx playwright install firefox webkit`, then run `npm run test:smoke`. It covers the main structural flow and is not a claim of full browser parity.
+
+The browser suites block service workers. Offline app loading, browser installation, and the update lifecycle require the mocked PWA tests and [manual PWA QA](docs/pwa.md#manual-qa-production-build).
 
 ## License
 
