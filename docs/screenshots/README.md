@@ -15,8 +15,8 @@ For future updates, capture the **actual current app** in a separate browser pro
 
 1. Start the app with `npm run dev` and open `http://localhost:3000` in a **new, isolated browser profile or private window**. Keep that window open until all captures are finished. Avoid an existing personal browser session or installed app.
 2. In **Settings → Language**, choose **English**. Select a consistent theme for the captures.
-3. On an empty Home screen, choose **I have a backup**; alternatively, open **Settings → Backups → Import file**.
-4. Select `docs/screenshots/hundred-demo-data.json`, verify the preview lists **Company**, **Monthly Budget**, and **Week**, then select **Add wholes**. Return to **Home**.
+3. On first launch, Home contains the starter Wholes **Моє життя** and **Місячний бюджет**. In this isolated profile, delete each using **⋯ → Delete whole** and confirm, leaving Home empty. Do not clear site data: that would create the starters again on the next launch.
+4. Choose **I have a backup** on the empty Home, or open **Settings → Backups → Import file**. Select `docs/screenshots/hundred-demo-data.json`, verify the preview lists **Company**, **Monthly Budget**, and **Week**, then select **Add wholes**. Return to **Home**.
 
 Import **adds copies**; it does not replace existing Wholes. Importing twice creates duplicates, and the 20-Whole limit still applies. The v3 backup contains root navigation paths, but the app intentionally generates new IDs and resets imported paths to each root. Open a Whole from its Home card after import; there are no fixed deep links to individual Wholes. The example's structural `weight` values are internal v3 fields, not quantities or percentages displayed to users.
 

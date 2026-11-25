@@ -16,6 +16,45 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test("keyboard actions reorder saved Wholes, respect boundaries and persist", async ({ page }) => {
+  await page.goto("/");
+  const names = page.locator(".resource-library-grid .resource-card-name");
+  const companyActions = page.getByRole("button", { name: "Дії для «Company»" });
+  await companyActions.focus();
+  await page.keyboard.press("Enter");
+  const companyMenu = page.getByRole("dialog", { name: "Company" });
+  await expect(companyMenu.getByRole("button", { name: "Перемістити вище" })).toBeDisabled();
+  const down = companyMenu.getByRole("button", { name: "Перемістити нижче" });
+  await down.focus();
+  await expect(down).toHaveCSS("outline-style", "solid");
+  await page.keyboard.press("Enter");
+  await expect(companyMenu).not.toBeVisible();
+  await expect(companyActions).toBeFocused();
+  await expect(names).toHaveText(["Monthly Budget", "Company", "Learning roadmap", "A remarkably long whole name without gaps for checking mobile layout"]);
+  await page.reload();
+  await expect(names.nth(1)).toHaveText("Company");
+  await companyActions.focus();
+  await page.keyboard.press("Enter");
+  const up = companyMenu.getByRole("button", { name: "Перемістити вище" });
+  await up.focus();
+  await page.keyboard.press("Enter");
+  await expect(names.first()).toHaveText("Company");
+  const lastActions = page.getByRole("button", { name: "Дії для «A remarkably long whole name without gaps for checking mobile layout»" });
+  await lastActions.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Перемістити нижче" })).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await page.reload();
+  await expect(names.first()).toHaveText("Company");
+  await page.getByRole("button", { name: "Налаштування", exact: true }).click();
+  await page.locator("#hundred-language").selectOption("en");
+  await page.getByRole("button", { name: "Home", exact: true }).click();
+  await page.getByRole("button", { name: "Actions for “Company”" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Move up" })).toBeDisabled();
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Move down" })).toBeEnabled();
+});
+
 test("compact mobile grid shows structure and measured progress without overflow", async ({ page }) => {
   await page.goto("/");
   const cards = page.locator(".resource-library-grid .resource-card");

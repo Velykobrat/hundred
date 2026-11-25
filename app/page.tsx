@@ -46,6 +46,7 @@ function Workspace() {
   const actionNode = root && actionsId ? findNodeById(root, actionsId) : null;
   const actionParent = root && actionNode ? findParent(root, actionNode.id) : null;
   const actionIndex = actionParent?.children.findIndex(child => child.id === actionNode?.id) ?? -1;
+  const actionWholeIndex = screen === "home" && actionNode && actionNode.id === root?.id ? workspace.collection.documents.findIndex(document => document.root?.id === actionsId) : -1;
   const parent = root && editing ? findParent(root, editing.id) : null;
   const availableForEdit = editing && parent && isMeasuredNode(parent) ? (units(parent.value) - units(sumValues(parent.children.filter((child) => child.id !== editing.id)))) / 1_000_000 : undefined;
   const free = current ? remaining(current) : 0;
@@ -97,6 +98,14 @@ function Workspace() {
     if (nextRoot === root) return;
     const issue = workspace.change({ root: nextRoot, pathIds }, t("Порядок частин змінено."));
     if (issue) setActionError(issue);
+  }
+  function reorderWhole(id: string, target: number) {
+    const issue = workspace.reorderWhole(id, target, t("Порядок цілих змінено."));
+    if (issue) setActionError(issue);
+  }
+  function moveAction(direction: "up" | "down") {
+    if (actionWholeIndex >= 0 && actionNode) reorderWhole(actionNode.id, actionWholeIndex + (direction === "up" ? -1 : 1));
+    else moveActionPart(direction);
   }
   function selectDocument(id: string | null) {
     workspace.select(id);
@@ -213,7 +222,7 @@ function Workspace() {
           {actionError && <p role="alert" className="mt-2 text-sm text-rose-300">{translateMessage(actionError)}</p>}
         </div>
 
-        {screen === "home" && <HomeScreen collection={workspace.collection} reminderVisible={backupReminder.visible} onDownload={downloadBackup} onRemindLater={backupReminder.remindLater} onSelect={selectDocument} onActions={(id) => { const issue = workspace.select(id); if (issue) setActionError(issue); else setActionsId(id); }} onOpenResult={openSearchResult} onImport={() => setImporting(true)} onReorder={(id, target) => { const issue = workspace.reorderWhole(id, target, t("Порядок цілих змінено.")); if (issue) setActionError(issue); }} />}
+        {screen === "home" && <HomeScreen collection={workspace.collection} reminderVisible={backupReminder.visible} onDownload={downloadBackup} onRemindLater={backupReminder.remindLater} onSelect={selectDocument} onActions={(id) => { const issue = workspace.select(id); if (issue) setActionError(issue); else setActionsId(id); }} onOpenResult={openSearchResult} onImport={() => setImporting(true)} onReorder={reorderWhole} />}
 
         {screen === "settings" && <SettingsPanel count={workspace.collection.documents.length} storageError={workspace.storageError} canExport={workspace.collection.documents.length > 0 || Boolean(workspace.storageError)} onExport={downloadBackup} onImport={() => setImporting(true)} />}
 
@@ -224,9 +233,9 @@ function Workspace() {
         ) : <p role="alert">{t("Не вдалося відкрити частину.")}{" "}<button type="button" onClick={() => goToPath([root.id])} className="underline">{t("Повернутися до цілого")}</button></p>)}
 
         <WorkspaceDialogs
-          nodes={{ root, current, actionNode, actionParent, actionIndex, editing, parent, availableForEdit, deleting, deletingParent, free, atLimit, count: workspace.collection.documents.length }}
+          nodes={{ root, current, actionNode, actionParent, actionIndex, actionWholeIndex, editing, parent, availableForEdit, deleting, deletingParent, free, atLimit, count: workspace.collection.documents.length }}
           visibility={{ deletingWhole, adding, importing, onActionsId: setActionsId, onEditingId: setEditingId, onDeletingId: setDeletingId, onDeletingWhole: setDeletingWhole, onAdding: setAdding, onImporting: setImporting }}
-          actions={{ onOpenAction: openActionNode, onMove: moveActionPart, onDuplicate: handleDuplicateWhole, onAddPart: handleAddPart, onEditNode: handleEditNode, onDeleteWhole: handleDeleteWhole, onDeletePart: handleDeletePart, onImport: handleImport }}
+          actions={{ onOpenAction: openActionNode, onMove: moveAction, onDuplicate: handleDuplicateWhole, onAddPart: handleAddPart, onEditNode: handleEditNode, onDeleteWhole: handleDeleteWhole, onDeletePart: handleDeletePart, onImport: handleImport }}
         />
       </div>
       <BottomNavigation screen={screen} onNavigate={goToScreen} />

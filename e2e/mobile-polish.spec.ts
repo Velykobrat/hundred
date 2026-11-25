@@ -16,10 +16,9 @@ test("Settings signature links only the wordmark and remains usable in both them
     const product = (await footer.locator("strong").boundingBox())!;
     const copyright = (await footer.getByText("© 2026").boundingBox())!;
     const maker = (await footer.locator(".maker").boundingBox())!;
-    const footerBox = (await footer.boundingBox())!;
     expect(maker.x).toBeGreaterThan(copyright.x + copyright.width);
     expect(product.x).toBeGreaterThan(maker.x + maker.width);
-    expect(Math.abs(maker.x + maker.width / 2 - footerBox.x - footerBox.width / 2)).toBeLessThan(1);
+    expect(maker.x - copyright.x - copyright.width).toBeLessThanOrEqual(8);
     expect(Math.abs(copyright.y + copyright.height / 2 - maker.y - maker.height / 2)).toBeLessThan(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(link).toBeVisible();
