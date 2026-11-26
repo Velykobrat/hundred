@@ -4,12 +4,15 @@ Meaningful changes to Hundred are recorded here. Earlier release history has not
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-26
+
 ### Added
 
 - Two editable structural and measured starter Wholes on first launch when no Hundred storage exists.
 - GitHub Actions validation, Chromium end-to-end testing, and release consistency checks.
 - Stale-write detection and safer reloads for edits in multiple tabs.
 - Part locking, structural Part and saved Whole reordering, and mobile long-press reorder mode.
+- Keyboard-accessible saved Whole reordering through the actions menu.
 - Mobile Add Part floating action and sticky mobile header.
 - BeBetter product signature and updated Hundred favicon and PWA icons.
 - Firefox and WebKit browser smoke coverage in CI and release checks.
