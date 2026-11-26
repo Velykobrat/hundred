@@ -2,7 +2,7 @@
 
 import { PreferencesProvider, usePreferences } from "../src/lib/use-preferences";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import PwaRegistration from "../src/components/PwaRegistration";
 import type { NodeColor } from "../src/lib/node-color";
 import type { NodeIcon } from "../src/lib/node-icon";
@@ -23,11 +23,25 @@ import WholeScreen from "../src/components/screens/WholeScreen";
 import WorkspaceDialogs from "../src/components/WorkspaceDialogs";
 import Icon from "../src/components/Icon";
 
+function StatusToast({ message, past, future }: { message: string; past: unknown; future: unknown }) {
+  const toast = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = toast.current;
+    if (!element) return;
+    element.hidden = !message;
+    if (!message) return;
+    const timer = window.setTimeout(() => { element.hidden = true; }, 3000);
+    return () => window.clearTimeout(timer);
+  }, [message, past, future]);
+  return <div ref={toast} className="status-toast" role="status" aria-live="polite" aria-atomic="true">{message}</div>;
+}
+
 function Workspace() {
   const { t, translateMessage } = usePreferences();
   const workspace = useDocument();
   const backupReminder = useBackupReminder(workspace.collection.documents.length);
   const { root, pathIds } = workspace.document;
+  const importantNotice = workspace.notice.startsWith("Дані змінилися в іншій вкладці.");
   const [screen, setScreen] = useScreen();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -200,9 +214,8 @@ function Workspace() {
         <header className={`app-header${screen === "home" ? " home-header" : ""}`}>
           <button type="button" onClick={() => screen === "home" ? window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }) : goToScreen("home")} className="brand" aria-label={t(screen === "home" ? "Hundred — нагору" : "Hundred — на головну")}>
             <svg className="brand-mark" viewBox="300 318 650 616" aria-hidden="true" focusable="false">
-              <defs><linearGradient id="brand-violet" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#6A2DFF" /><stop offset="55%" stopColor="#5A20F5" /><stop offset="100%" stopColor="#4B16E8" /></linearGradient></defs>
-              <rect x="311" y="328" width="363" height="400" rx="43" fill="url(#brand-violet)" />
-              <g fill="currentColor"><rect x="695" y="328" width="243" height="157" rx="35" /><rect x="695" y="510" width="243" height="220" rx="29" /><rect x="311" y="753" width="408" height="170" rx="42" /><rect x="741" y="753" width="197" height="170" rx="34" /></g>
+              <rect x="311" y="328" width="363" height="400" rx="43" fill="var(--accent)" />
+              <rect className="brand-neutral-light" x="695" y="328" width="243" height="157" rx="35" /><rect className="brand-neutral-mid" x="695" y="510" width="243" height="220" rx="29" /><rect className="brand-neutral-dark" x="311" y="753" width="408" height="170" rx="42" /><rect className="brand-neutral-light" x="741" y="753" width="197" height="170" rx="34" />
             </svg>
             <span className="brand-wordmark">Hundred<span className="brand-dot" aria-hidden="true" /></span>
           </button>
@@ -215,12 +228,13 @@ function Workspace() {
           </div>
         </header>
 
-        <div className={`save-status${workspace.storageError || workspace.notice || actionError ? "" : " save-status-empty"}`}>
+        {(workspace.storageError || importantNotice || actionError) && <div className="save-status">
           {workspace.storageError && <p role="alert" className="text-sm text-amber-300">{translateMessage(workspace.storageError)}</p>}
           {workspace.storageError && <p className="mt-2 text-xs leading-relaxed text-neutral-400">{t("Завантаж резервну копію в налаштуваннях, щоб зберегти поточні дані файлом.")}</p>}
-          <p aria-live="polite" aria-atomic="true" className="mt-1 text-sm text-indigo-300">{translateMessage(workspace.notice)}</p>
+          {importantNotice && <p role="alert" className="mt-1 text-sm text-amber-300">{translateMessage(workspace.notice)}</p>}
           {actionError && <p role="alert" className="mt-2 text-sm text-rose-300">{translateMessage(actionError)}</p>}
-        </div>
+        </div>}
+        <StatusToast message={importantNotice ? "" : translateMessage(workspace.notice)} past={workspace.past} future={workspace.future} />
 
         {screen === "home" && <HomeScreen collection={workspace.collection} reminderVisible={backupReminder.visible} onDownload={downloadBackup} onRemindLater={backupReminder.remindLater} onSelect={selectDocument} onActions={(id) => { const issue = workspace.select(id); if (issue) setActionError(issue); else setActionsId(id); }} onOpenResult={openSearchResult} onImport={() => setImporting(true)} onReorder={reorderWhole} />}
 

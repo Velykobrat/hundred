@@ -4,6 +4,16 @@ Meaningful changes to Hundred are recorded here. Earlier release history has not
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-26
+
+### Changed
+
+- Added segmented language and theme controls and simplified the Settings hierarchy and guide accordion.
+- Improved title readability with fixed-height cards, title clamps, character counters, and optional guidance for longer names.
+- Refined structural Part cards with a utility bar, a more readable responsive grid, and a compact Add Part and Cards/List toolbar.
+- Made routine status notices temporary and floating, without shifting the page layout.
+- Harmonized the Hundred mark and category colors across light and dark themes.
+
 ## [1.0.0] - 2026-11-26
 
 ### Added

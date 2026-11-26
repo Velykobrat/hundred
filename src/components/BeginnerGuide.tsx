@@ -1,3 +1,4 @@
+import { useId, useState } from "react";
 import { usePreferences } from "../lib/use-preferences";
 import Icon from "./Icon";
 
@@ -14,13 +15,14 @@ const steps = [
 
 export default function BeginnerGuide() {
   const { t } = usePreferences();
+  const [open, setOpen] = useState(false);
+  const contentId = useId();
   return <section className="surface settings-section beginner-guide" aria-labelledby="guide-heading">
-    <div className="settings-section-heading"><Icon name="layers" /><h2 id="guide-heading">{t("Як користуватися Hundred")}</h2></div>
-    <p>{t("Ціле → частини → нове ціле. Наприклад: команда → відділ → учасники.")}</p>
-    <details>
-      <summary>{t("Коротка інструкція")}</summary>
+    <h2 id="guide-heading"><button type="button" className="beginner-guide-toggle" aria-expanded={open} aria-controls={contentId} onClick={() => setOpen(!open)}><span>{t("Як користуватися Hundred")}</span><Icon name="chevron" /></button></h2>
+    <div id={contentId} className="guide-content" hidden={!open}>
+      <p>{t("Ціле → частини → нове ціле. Наприклад: команда → відділ → учасники.")}</p>
       <ol>{steps.map(([title, description]) => <li key={title}><h3>{t(title)}</h3><p>{t(description)}</p></li>)}</ol>
       <p className="guide-level-hint">{t("Кількість рівнів на картці — найбільша глибина цілого. Саме ціле є першим рівнем.")}</p>
-    </details>
+    </div>
   </section>;
 }

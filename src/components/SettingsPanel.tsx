@@ -10,23 +10,21 @@ type Props = { count: number; storageError: string | null; canExport: boolean; o
 export default function SettingsPanel({ count, storageError, canExport, onExport, onImport }: Props) {
   const { t, language, theme, setLanguage, setTheme, preferenceError } = usePreferences();
   return <section className="settings-panel" aria-labelledby="settings-heading">
-    <header className="screen-heading"><p className="eyebrow">{t("Твій Hundred")}</p><h1 id="settings-heading">{t("Налаштування")}</h1></header>
+    <header className="screen-heading"><h1 id="settings-heading">{t("Налаштування")}</h1></header>
     <BeginnerGuide />
     <section className="surface settings-section" aria-labelledby="appearance-heading">
-      <div className="settings-section-heading"><Icon name="settings" /><h2 id="appearance-heading">{t("Вигляд")}</h2></div>
-      <label htmlFor="hundred-language" className="preference-label">{t("Мова інтерфейсу")}</label>
-      <select id="hundred-language" value={language} onChange={(event) => setLanguage(event.target.value === "en" ? "en" : "uk")} className="preference-select" aria-describedby="language-hint">
-        <option value="uk" lang="uk">Українська</option>
-        <option value="en" lang="en">English</option>
-      </select>
+      <div className="settings-section-heading"><Icon name="settings" /><h2 id="appearance-heading">{t("Інтерфейс")}</h2></div>
+      <div className="preference-segments" role="group" aria-label={t("Мова інтерфейсу")} aria-describedby="language-hint">
+        <button type="button" lang="uk" data-language-option="uk" aria-pressed={language === "uk"} onClick={() => setLanguage("uk")}>УКР</button>
+        <button type="button" lang="en" data-language-option="en" aria-pressed={language === "en"} onClick={() => setLanguage("en")}>ENG</button>
+      </div>
       <p id="language-hint" className="preference-hint">{t("Назви твоїх цілих і одиниці виміру залишаться такими, як ти їх ввів.")}</p>
-      <label htmlFor="hundred-theme" className="preference-label">{t("Тема")}</label>
-      <select id="hundred-theme" value={theme} onChange={(event) => setTheme(event.target.value === "light" ? "light" : event.target.value === "system" ? "system" : "dark")} className="preference-select" aria-describedby="theme-hint">
-        <option value="dark">{t("Темна")}</option>
-        <option value="light">{t("Світла")}</option>
-        <option value="system">{t("Як у системі")}</option>
-      </select>
-      <p id="theme-hint" className="preference-hint">{t("Системна тема змінюється разом із налаштуваннями пристрою.")}</p>
+      <div className="preference-segments theme-segments" role="group" aria-label={t("Тема")} aria-describedby="theme-hint">
+        <button type="button" data-theme-option="light" aria-pressed={theme === "light"} onClick={() => setTheme("light")}><Icon name="sun" />{t("Світла")}</button>
+        <button type="button" data-theme-option="dark" aria-pressed={theme === "dark"} onClick={() => setTheme("dark")}><Icon name="moon" />{t("Темна")}</button>
+        <button type="button" data-theme-option="system" aria-pressed={theme === "system"} onClick={() => setTheme("system")}><Icon name="monitor" />{t("Авто")}</button>
+      </div>
+      <p id="theme-hint" className="preference-hint">{t("Авто використовує тему пристрою.")}</p>
       {preferenceError && <p role="alert" className="text-sm text-amber-300">{preferenceError}</p>}
     </section>
     <section className="surface settings-section" aria-labelledby="storage-heading">

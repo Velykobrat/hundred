@@ -21,6 +21,7 @@ export default function WholeScreen({ root, current, path, showingPath, free, us
   const suppressClick = useRef(false);
   const addButton = useRef<HTMLButtonElement>(null);
   const [addButtonVisible, setAddButtonVisible] = useState(true);
+  const measured = isMeasuredNode(current);
   const canAdd = !(isMeasuredNode(current) && free === 0) && !atLimit;
   useEffect(() => {
     const button = addButton.current;
@@ -28,7 +29,7 @@ export default function WholeScreen({ root, current, path, showingPath, free, us
     const observer = new IntersectionObserver(([entry]) => setAddButtonVisible(entry.isIntersecting));
     observer.observe(button);
     return () => observer.disconnect();
-  }, []);
+  }, [measured]);
   function startSwipe(event: PointerEvent<HTMLDivElement>) {
     suppressClick.current = false;
     swipe.current = event.pointerType === "touch" && event.isPrimary && event.clientX <= EDGE_START_PX
@@ -74,11 +75,14 @@ export default function WholeScreen({ root, current, path, showingPath, free, us
                 <p>{t("Вільно:")}{" "}{formatNumber(free)} {current.unit}</p>
                 <div className="usage-track" aria-hidden="true"><span style={{ width: `${Math.min(100, used / current.value * 100)}%` }} /></div>
               </div>}
-              <button ref={addButton} type="button" className="primary-button add-part-button" disabled={!canAdd} onClick={onAdd}><Icon name="plus" /><span>{t("Додати частину")}</span></button>
+              {measured && <button ref={addButton} type="button" className="primary-button add-part-button" disabled={!canAdd} onClick={onAdd}><Icon name="plus" /><span>{t("Додати частину")}</span></button>}
             </header>
             <div className={`workspace-grid${!isMeasuredNode(current) ? " structure-list-workspace" : ""}`}>
               <div className="min-w-0">
-                <div className="map-heading"><h2>{isMeasuredNode(current) ? t("Карта цілого") : t("Структура частин")}</h2>{!isMeasuredNode(current) && <StructureViewToggle />}</div>
+                {measured ? <div className="map-heading"><h2>{t("Карта цілого")}</h2></div> : <div className="structure-toolbar" role="group" aria-label={t("Керування частинами")}>
+                  <button ref={addButton} type="button" className="primary-button add-part-button" disabled={!canAdd} onClick={onAdd}><Icon name="plus" /><span>{t("Додати частину")}</span></button>
+                  <StructureViewToggle />
+                </div>}
                 {!isMeasuredNode(current) && structureView === "list"
                   ? <PartsList node={current} free={free} atLimit={atLimit} onOpen={onOpen} onActions={onActions} onToggleLock={onToggleLock} />
                   : !isMeasuredNode(current) && !current.children.length

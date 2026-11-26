@@ -72,7 +72,7 @@ test("the reminder can download a backup directly", async ({ page }) => {
 test("the reminder is translated and its postpone action works from the keyboard", async ({ page }) => {
   await createWhole(page, "Company");
   await page.getByRole("button", { name: "Налаштування", exact: true }).click();
-  await page.getByLabel("Мова інтерфейсу").selectOption("en");
+  await page.getByRole("button", { name: "ENG" }).click();
   await page.getByRole("button", { name: "Home", exact: true }).click();
   const reminder = page.getByRole("region", { name: "Backup reminder" });
   await expect(reminder).toContainText("Hundred data is stored only in this browser.");

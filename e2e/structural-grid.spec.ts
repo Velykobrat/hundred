@@ -25,7 +25,10 @@ test("compact structural cards fit at mobile widths on root and nested levels", 
     const title = card.locator("strong");
     await expect(title).toHaveCSS("-webkit-line-clamp", "3");
     const box = (await card.boundingBox())!;
+    expect(box.height).toBeCloseTo((await cards.nth(1).boundingBox())!.height, 0);
     const nameBox = (await title.boundingBox())!;
+    const utilityBox = (await card.locator(".structural-card-utility").boundingBox())!;
+    expect(nameBox.y).toBeGreaterThanOrEqual(utilityBox.y + utilityBox.height);
     expect(nameBox.x + nameBox.width).toBeLessThanOrEqual(box.x + box.width);
     expect(nameBox.y + nameBox.height).toBeLessThanOrEqual(box.y + box.height);
     const lock = (await card.locator(".part-lock").boundingBox())!;
@@ -37,6 +40,8 @@ test("compact structural cards fit at mobile widths on root and nested levels", 
     expect(lock.x + lock.width).toBeLessThanOrEqual(actions.x);
     expect(lock.x).toBeGreaterThanOrEqual(box.x);
     expect(actions.x + actions.width).toBeLessThanOrEqual(box.x + box.width);
+    const shortTitle = cards.nth(1).locator("strong");
+    expect(await shortTitle.evaluate(el => el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight))).toBeLessThan(1.5);
   }
   await page.setViewportSize({ width: 319, height: 844 });
   const first = (await cards.nth(0).boundingBox())!;
@@ -60,6 +65,25 @@ test("compact structural cards fit at mobile widths on root and nested levels", 
   const row1 = (await rows.nth(0).boundingBox())!;
   const row2 = (await rows.nth(1).boundingBox())!;
   expect(row2.y).toBeGreaterThanOrEqual(row1.y + row1.height);
+});
+
+test("structural columns keep short names readable across viewport widths", async ({ page }) => {
+  await createWhole(page, "Structure");
+  for (const name of ["Робота", "Навчання", "Здоров’я", "Фінанси", "Стосунки", "Дім"]) await addPart(page, name);
+  const cards = page.locator(".structural-card");
+  for (const [width, expected] of [[390, 2], [600, 2], [768, 3], [900, 3], [1024, 4], [1200, 4], [1440, 5], [1600, 5]]) {
+    await page.setViewportSize({ width, height: 844 });
+    const geometry = await cards.evaluateAll(elements => elements.map(card => {
+      const box = card.getBoundingClientRect();
+      const title = card.querySelector("strong")!;
+      const lock = card.querySelector(".part-lock")!.getBoundingClientRect();
+      const actions = card.querySelector(".structural-card-actions")!.getBoundingClientRect();
+      return { x: Math.round(box.x), width: box.width, lines: title.getBoundingClientRect().height / parseFloat(getComputedStyle(title).lineHeight), collision: lock.right > actions.left };
+    }));
+    expect(new Set(geometry.map(card => card.x)).size, `columns at ${width}px`).toBe(expected);
+    expect(geometry.every(card => card.lines < 1.5 && !card.collision), `card content at ${width}px`).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
 });
 
 test("long press drags a structural part from bottom right to top left and saves the order", async ({ page }) => {

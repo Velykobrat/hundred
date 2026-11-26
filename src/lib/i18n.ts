@@ -2,6 +2,8 @@ export type Language = "uk" | "en";
 export type Theme = "dark" | "light" | "system";
 export type TranslationParams = Record<string, string | number>;
 export const english: Record<string, string> = {
+  "Авто": "Auto",
+  "Коротша назва краще читається на картці.": "Shorter names are easier to read on cards.",
   "Відкрити сайт BeBetter": "Open the BeBetter website",
   "Порядок цілих змінено.": "Whole order updated.",
   "Зафіксувати частину": "Lock Part",
@@ -267,6 +269,9 @@ export const english: Record<string, string> = {
   "Назви твоїх цілих і одиниці виміру залишаться такими, як ти їх ввів.": "Your whole names and units stay exactly as you entered them.",
   "Тема": "Theme",
   "Вигляд": "Appearance",
+  "Інтерфейс": "Interface",
+  "Керування частинами": "Part controls",
+  "Авто використовує тему пристрою.": "Auto uses your device theme.",
   "Темна": "Dark",
   "Світла": "Light",
   "Як у системі": "System",

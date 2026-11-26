@@ -13,7 +13,7 @@ import { parseValue, units, validateFields, type FieldErrors } from "../lib/docu
 import { parsePercent, percentToValue, valueToPercent } from "../lib/percentage";
 
 type Props = {
-  initialName?: string; initialValue?: number; unit?: string; createWhole?: boolean; optionalQuantity?: boolean; structuralEdit?: boolean;
+  initialName?: string; initialValue?: number; unit?: string; createWhole?: boolean; wholeName?: boolean; optionalQuantity?: boolean; structuralEdit?: boolean;
   available?: number; minimum?: number; submitLabel: string;
   parentValue?: number; parentName?: string;
   initialColor?: NodeColor;
@@ -21,7 +21,7 @@ type Props = {
   onSubmit: (name: string, value: number | undefined, unit: string, color?: NodeColor, icon?: NodeIcon) => string | void;
   onCancel?: () => void;
 };
-export default function NodeForm({ initialName = "", initialValue, initialColor, initialIcon, unit = "", createWhole = false, optionalQuantity = false, structuralEdit = false, available, minimum = 0, submitLabel, onSubmit, onCancel, parentValue, parentName }: Props) {
+export default function NodeForm({ initialName = "", initialValue, initialColor, initialIcon, unit = "", createWhole = false, wholeName = false, optionalQuantity = false, structuralEdit = false, available, minimum = 0, submitLabel, onSubmit, onCancel, parentValue, parentName }: Props) {
   const { t, formatNumber, formatPercent, translateMessage, language } = usePreferences();
   const id = useId();
   const nameInput = useRef<HTMLInputElement>(null);
@@ -30,6 +30,7 @@ export default function NodeForm({ initialName = "", initialValue, initialColor,
   }, [createWhole]);
   const optional = createWhole || optionalQuantity;
   const [name, setName] = useState(initialName);
+  const showNameHint = name.length > (createWhole || wholeName ? 40 : 80);
   const [color, setColor] = useState<NodeColor | undefined>(initialColor);
   const [icon, setIcon] = useState<NodeIcon | undefined>(initialIcon);
   const [value, setValue] = useState(initialValue === undefined ? "" : String(initialValue).replace(".", language === "uk" ? "," : "."));
@@ -76,8 +77,9 @@ export default function NodeForm({ initialName = "", initialValue, initialColor,
     <form noValidate onSubmit={submit} className="space-y-4">
       <div>
         <label htmlFor={`${id}-name`} className="mb-2 block text-sm text-neutral-300">{createWhole ? t("Назва") : t("Назва частини")}</label>
-        <input ref={nameInput} id={`${id}-name`} data-dialog-initial-focus={onCancel ? "" : undefined} value={name} onChange={(event) => { setName(event.target.value); setErrors((previous) => ({ ...previous, name: undefined })); }} maxLength={120} autoComplete="off" placeholder={createWhole ? t("Наприклад: Мої проєкти") : t("Назва категорії")} className={fieldClass} aria-required="true" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? `${id}-name-error` : undefined} />
-        <p aria-hidden="true" className="mt-1 text-right text-xs text-neutral-400">{name.length} / 120</p>
+        <input ref={nameInput} id={`${id}-name`} data-dialog-initial-focus={onCancel ? "" : undefined} value={name} onChange={(event) => { setName(event.target.value); setErrors((previous) => ({ ...previous, name: undefined })); }} maxLength={120} autoComplete="off" placeholder={createWhole ? t("Наприклад: Мої проєкти") : t("Назва категорії")} className={fieldClass} aria-required="true" aria-invalid={Boolean(errors.name)} aria-describedby={[showNameHint ? `${id}-name-hint` : "", errors.name ? `${id}-name-error` : ""].filter(Boolean).join(" ") || undefined} />
+        <p aria-hidden="true" className={`name-counter${showNameHint ? " is-noticeable" : ""}`}>{name.length} / 120</p>
+        {showNameHint && <p id={`${id}-name-hint`} className="name-hint">{t("Коротша назва краще читається на картці.")}</p>}
         {errors.name && <p id={`${id}-name-error`} role="alert" className="mt-2 text-sm text-rose-300">{translateMessage(errors.name)}</p>}
       </div>
       {!structuralEdit && <div className="space-y-4">

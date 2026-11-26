@@ -9,7 +9,7 @@ import type { Node, LayoutItem } from "../types/node";
 import { createTreemap } from "../lib/treemap";
 import { remaining } from "../lib/document";
 import { getNodeColor } from "../lib/format";
-import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 
 const LONG_PRESS_MS = 500;
 const LONG_PRESS_MOVE_TOLERANCE = 10;
@@ -95,7 +95,7 @@ function StructuralCard({ child, active, onOpen, onActions, onToggleLock, onStar
     if (pointer.current?.id === event.pointerId) { const dragging = pointer.current.dragging; pointer.current = null; if (dragging) onEnd(cancelled); }
     clearTimer();
   }
-  return <div data-reorder-id={child.id} className="surface structural-card" style={{ borderTop: "4px solid " + getNodeColor(child) }}>
+  return <div data-reorder-id={child.id} className="surface structural-card" style={{ "--part-color": getNodeColor(child) } as CSSProperties}>
     <button ref={button} type="button" className="structural-card-open" aria-label={t("Відкрити «{p0}»", {p0: child.name})} aria-disabled={Boolean(child.locked)} aria-describedby={isMeasuredNode(child) ? metadataId : undefined}
       onPointerDown={start} onPointerMove={move} onPointerUp={event => end(event)} onPointerCancel={event => end(event, true)}
       onContextMenu={(event) => event.preventDefault()}
@@ -103,7 +103,7 @@ function StructuralCard({ child, active, onOpen, onActions, onToggleLock, onStar
         if (suppressClick.current && event.detail !== 0) { suppressClick.current = false; return; }
         if (!active && !child.locked) onOpen(child);
       }}>
-      <span className="structural-card-title">{child.icon && <Icon name={child.icon} style={{ color: getNodeColor(child) }} />}<strong>{child.name}</strong></span>{isMeasuredNode(child) && <span id={metadataId}><NodeMetadata node={child} /></span>}
+      <span className="structural-card-utility" aria-hidden="true">{child.icon && <Icon name={child.icon} style={{ color: getNodeColor(child) }} />}</span><span className="structural-card-title"><strong>{child.name}</strong></span>{isMeasuredNode(child) && <span id={metadataId}><NodeMetadata node={child} /></span>}
     </button>
     <PartLock node={child} onToggle={onToggleLock} />
     <button type="button" data-actions-trigger className="icon-button structural-card-actions" aria-label={t("Дії для «{p0}»", {p0: child.name})} onClick={() => onActions(child.id)}><Icon name="more" /></button>

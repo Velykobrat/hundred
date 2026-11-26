@@ -11,7 +11,7 @@ test("Settings signature links only the wordmark and remains usable in both them
   await expect(link).toHaveAttribute("target", "_blank");
   await expect(link).toHaveAttribute("rel", "noopener noreferrer");
   for (const theme of ["dark", "light"]) {
-    await page.locator("#hundred-theme").selectOption(theme);
+    await page.locator(`[data-theme-option="${theme}"]`).click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
     const product = (await footer.locator("strong").boundingBox())!;
     const copyright = (await footer.getByText("© 2026").boundingBox())!;
@@ -23,7 +23,7 @@ test("Settings signature links only the wordmark and remains usable in both them
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(link).toBeVisible();
   }
-  await page.locator("#hundred-theme").focus();
+  await page.locator("[data-theme-option=system]").focus();
   for (let i = 0; i < 30 && !(await link.evaluate(element => document.activeElement === element)); i++) await page.keyboard.press("Tab");
   await expect(link).toBeFocused();
   await expect(link).toHaveCSS("outline-style", "solid");
@@ -31,7 +31,7 @@ test("Settings signature links only the wordmark and remains usable in both them
   const [popup] = await Promise.all([page.waitForEvent("popup"), page.keyboard.press("Enter")]);
   await popup.waitForURL("https://bebetter-development.vercel.app/");
   await popup.close();
-  await page.locator("#hundred-language").selectOption("en");
+  await page.getByRole("button", { name: "ENG" }).click();
   await expect(footer.getByRole("link", { name: "Open the BeBetter website" })).toBeVisible();
 });
 
@@ -139,17 +139,33 @@ test("Levels consumes the first outside tap before navigation or actions", async
 test("Settings puts the guide first and omits redundant copy in both languages", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Налаштування", exact: true }).tap();
-  await expect(page.locator(".settings-panel > section h2")).toHaveText(["Як користуватися Hundred", "Вигляд", "Дані на цьому пристрої", "Резервні копії"]);
+  await expect(page.locator(".settings-panel > section h2")).toHaveText(["Як користуватися Hundred", "Інтерфейс", "Дані на цьому пристрої", "Резервні копії"]);
   await expect(page.getByText("Збереження та перенесення твоїх цілих.")).toHaveCount(0);
   await expect(page.getByText("Очищення даних сайту видалить локальні цілі. Імпорт додає копії та зберігає наявні цілі.")).toHaveCount(0);
-  await page.getByLabel("Мова інтерфейсу").selectOption("en");
-  await expect(page.locator(".settings-panel > section h2")).toHaveText(["How to use Hundred", "Appearance", "Data on this device", "Backups"]);
+  await page.getByRole("button", { name: "ENG" }).click();
+  await expect(page.locator(".settings-panel > section h2")).toHaveText(["How to use Hundred", "Interface", "Data on this device", "Backups"]);
   await expect(page.getByText("Save and transfer your wholes.")).toHaveCount(0);
   await expect(page.getByText("Clearing site data will delete local wholes. Import adds copies and keeps existing wholes.")).toHaveCount(0);
 });
 
 test("mobile floating add follows the regular action and avoids navigation", async ({ page }) => {
   await createWhole(page, "Company");
+  const toolbar = page.getByRole("group", { name: "Керування частинами" });
+  await expect(page.getByRole("heading", { name: "Структура частин" })).toHaveCount(0);
+  await expect(toolbar.locator(".add-part-button")).toBeVisible();
+  await expect(toolbar.getByRole("group", { name: "Вигляд структури" })).toBeVisible();
+  for (const width of [390, 600, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
+    const addBox = (await toolbar.locator(".add-part-button").boundingBox())!;
+    const toggleBox = (await toolbar.locator(".structure-view-toggle").boundingBox())!;
+    expect(addBox.x + addBox.width).toBeLessThanOrEqual(toggleBox.x);
+    expect(Math.abs(addBox.y - toggleBox.y)).toBeLessThan(8);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await toolbar.getByRole("button", { name: "Список" }).click();
+  await expect(toolbar.getByRole("button", { name: "Список" })).toHaveAttribute("aria-pressed", "true");
+  await toolbar.getByRole("button", { name: "Картки" }).click();
   for (let i = 1; i <= 11; i++) await addPart(page, `Part ${i}`);
   const regular = page.locator(".add-part-button");
   const floating = page.locator(".add-part-floating");

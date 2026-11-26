@@ -47,7 +47,7 @@ test("keyboard actions reorder saved Wholes, respect boundaries and persist", as
   await page.reload();
   await expect(names.first()).toHaveText("Company");
   await page.getByRole("button", { name: "Налаштування", exact: true }).click();
-  await page.locator("#hundred-language").selectOption("en");
+  await page.getByRole("button", { name: "ENG" }).click();
   await page.getByRole("button", { name: "Home", exact: true }).click();
   await page.getByRole("button", { name: "Actions for “Company”" }).focus();
   await page.keyboard.press("Enter");
@@ -62,12 +62,13 @@ test("compact mobile grid shows structure and measured progress without overflow
   const a = (await cards.nth(0).boundingBox())!;
   const b = (await cards.nth(1).boundingBox())!;
   expect(a.y).toBe(b.y);
+  expect(a.height).toBe(b.height);
   expect(b.x).toBeGreaterThan(a.x + a.width);
   await expect(cards.nth(0).locator(".resource-card-compact-meta")).toContainText("1 частин · 2 рівні");
   await expect(cards.nth(1).locator(".resource-card-value")).toContainText("грн");
   await expect(cards.nth(1).locator(".resource-card-compact-meta")).toContainText("20%");
   await expect(cards.nth(1).locator(".usage-track")).toBeVisible();
-  await expect(cards.last().locator(".resource-card-name")).toHaveCSS("-webkit-line-clamp", "3");
+  await expect(cards.last().locator(".resource-card-name")).toHaveCSS("-webkit-line-clamp", "2");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.setViewportSize({ width: 360, height: 844 });
   expect((await cards.nth(0).boundingBox())!.y).toBe((await cards.nth(1).boundingBox())!.y);
@@ -105,6 +106,7 @@ test("long press and drag reorder Wholes and persist through undo, redo and relo
   await page.goto("/");
   const cards = page.locator(".resource-library-grid .resource-card");
   await expect(cards).toHaveCount(4);
+  await cards.nth(2).scrollIntoViewIfNeeded();
   const source = (await cards.nth(2).boundingBox())!;
   const target = (await cards.nth(0).boundingBox())!;
   const cdp = await page.context().newCDPSession(page);

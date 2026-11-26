@@ -37,7 +37,7 @@ test("home and settings render the product signature", async ({ page }) => {
   await expect(link).toHaveAttribute("target", "_blank");
   await expect(link).toHaveAttribute("rel", "noopener noreferrer");
   for (const theme of ["light", "dark"]) {
-    await page.locator("#hundred-theme").selectOption(theme);
+    await page.locator(`[data-theme-option="${theme}"]`).click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
     await expect(footer.locator("img")).toBeVisible();
   }

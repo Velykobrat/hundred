@@ -1,8 +1,11 @@
 import type { ReactNode, SVGProps } from "react";
 
-export type IconName = "search" | "home" | "resource" | "settings" | "back" | "chevron" | "more" | "edit" | "trash" | "copy" | "download" | "upload" | "plus" | "layers" | "money" | "clock" | "people" | "project" | "folder" | "target" | "book" | "briefcase" | "heart" | "star" | "bolt" | "globe" | "coffee" | "shield" | "list" | "lock";
+export type IconName = "sun" | "moon" | "monitor" | "search" | "home" | "resource" | "settings" | "back" | "chevron" | "more" | "edit" | "trash" | "copy" | "download" | "upload" | "plus" | "layers" | "money" | "clock" | "people" | "project" | "folder" | "target" | "book" | "briefcase" | "heart" | "star" | "bolt" | "globe" | "coffee" | "shield" | "list" | "lock";
 
 const paths: Record<IconName, ReactNode> = {
+  sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4m0-14.2-1.4 1.4M6.3 17.7l-1.4 1.4" /></>,
+  moon: <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" />,
+  monitor: <><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8m-4-4v4" /></>,
   lock: <><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" /></>,
   search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></>,
   list: <><path d="M8 6h13M8 12h13M8 18h13" /><circle cx="3" cy="6" r=".5" /><circle cx="3" cy="12" r=".5" /><circle cx="3" cy="18" r=".5" /></>,

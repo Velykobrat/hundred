@@ -21,6 +21,8 @@ test("a stale tab cannot overwrite another tab and can edit after reloading", as
   const saved = await page.evaluate(() => localStorage.getItem("hundred.document.v1"));
   await dialog.getByRole("button", { name: "Додати частину", exact: true }).click();
   await expect(second.getByText("Дані змінилися в іншій вкладці. Новішу версію завантажено, щоб не перезаписати зміни.").first()).toBeVisible();
+  await second.waitForTimeout(3200);
+  await expect(second.locator(".save-status [role=alert]").filter({ hasText: "Дані змінилися в іншій вкладці" })).toBeVisible();
   expect(await second.evaluate(() => localStorage.getItem("hundred.document.v1"))).toBe(saved);
   await expect(second.getByRole("button", { name: "Відкрити «First edit»" })).toBeVisible();
   await second.keyboard.press("Escape");
